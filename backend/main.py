@@ -71,11 +71,11 @@ async def lifespan(app: FastAPI):
         cache["articles"] = saved_articles
 
     # تحديث فوري إذا لا توجد بيانات
-    if not cache["trends"] and settings.RAPIDAPI_KEY:
+    if not cache["trends"]:
         await refresh_trends()
 
     # جدولة التحديث الدوري
-    if settings.RAPIDAPI_KEY:
+    if settings.CLAUDE_API_KEY:
         scheduler.add_job(
             refresh_trends,
             "interval",

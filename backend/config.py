@@ -5,7 +5,6 @@ load_dotenv()
 
 
 class Settings:
-    RAPIDAPI_KEY: str = os.getenv("RAPIDAPI_KEY", "")
     CLAUDE_API_KEY: str = os.getenv("CLAUDE_API_KEY", "")
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
