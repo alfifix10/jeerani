@@ -4,7 +4,7 @@
 // ========================================
 
 // ضع رابط Render هنا بعد النشر، مثال: https://trendscope-api.onrender.com
-const RENDER_URL = '';
+const RENDER_URL = 'https://yhnjjkk.onrender.com';
 
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:8000'
