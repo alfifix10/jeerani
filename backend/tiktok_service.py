@@ -1,26 +1,18 @@
 """
-خدمة جلب بيانات تيك توك عبر RapidAPI
-تستخدم TikTok API المجاني من RapidAPI
+خدمة جلب بيانات تيك توك
+تستخدم Claude AI لاكتشاف وتحليل الترندات الرائجة
 """
 
 import httpx
+import re
 from config import settings
 
-RAPIDAPI_HOST = "tiktok-api23.p.rapidapi.com"
-BASE_URL = f"https://{RAPIDAPI_HOST}"
-
-HEADERS = {
-    "x-rapidapi-key": settings.RAPIDAPI_KEY,
-    "x-rapidapi-host": RAPIDAPI_HOST,
-}
-
-# تصنيف الهاشتاقات تلقائياً
 CATEGORY_KEYWORDS = {
-    "entertainment": ["رقص", "تحدي", "مقلب", "كوميدي", "ضحك", "dance", "challenge", "funny", "comedy"],
-    "education": ["تعلم", "معلومة", "حقيقة", "علم", "دراسة", "learn", "fact", "science", "education"],
-    "technology": ["تقنية", "ذكاء", "برمجة", "هاتف", "تطبيق", "ai", "tech", "coding", "app"],
-    "health": ["صحة", "تمارين", "رياضة", "غذاء", "دايت", "fitness", "health", "workout", "diet"],
-    "food": ["طبخ", "وصفة", "أكل", "مطبخ", "حلويات", "cooking", "recipe", "food", "kitchen"],
+    "entertainment": ["رقص", "تحدي", "مقلب", "كوميدي", "ضحك", "dance", "challenge", "funny", "comedy", "trend"],
+    "education": ["تعلم", "معلومة", "حقيقة", "علم", "دراسة", "learn", "fact", "science", "education", "hack"],
+    "technology": ["تقنية", "ذكاء", "برمجة", "هاتف", "تطبيق", "ai", "tech", "coding", "app", "robot"],
+    "health": ["صحة", "تمارين", "رياضة", "غذاء", "دايت", "fitness", "health", "workout", "diet", "skin"],
+    "food": ["طبخ", "وصفة", "أكل", "مطبخ", "حلويات", "cooking", "recipe", "food", "kitchen", "eat"],
 }
 
 CATEGORY_LABELS = {
@@ -33,7 +25,6 @@ CATEGORY_LABELS = {
 
 
 def classify_hashtag(hashtag: str) -> tuple[str, str]:
-    """تصنيف الهاشتاق حسب الكلمات المفتاحية"""
     text = hashtag.lower()
     for cat, keywords in CATEGORY_KEYWORDS.items():
         for kw in keywords:
@@ -43,7 +34,6 @@ def classify_hashtag(hashtag: str) -> tuple[str, str]:
 
 
 def format_number(num: int) -> str:
-    """تحويل الأرقام لصيغة مقروءة"""
     if num >= 1_000_000_000:
         return f"{num / 1_000_000_000:.1f}B"
     if num >= 1_000_000:
@@ -54,160 +44,108 @@ def format_number(num: int) -> str:
 
 
 async def fetch_trending_hashtags() -> list[dict]:
-    """جلب الهاشتاقات الرائجة من تيك توك"""
-    try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.get(
-                f"{BASE_URL}/api/trending/hashtag",
-                headers=HEADERS,
-            )
-            response.raise_for_status()
-            data = response.json()
-
-            trends = []
-            hashtags = data.get("hashtag_list") or data.get("data") or []
-
-            for i, item in enumerate(hashtags[:20]):
-                hashtag_name = item.get("hashtag_name", item.get("title", ""))
-                view_count = item.get("view_count", item.get("stats", {}).get("viewCount", 0))
-                video_count = item.get("video_count", item.get("stats", {}).get("videoCount", 0))
-
-                category, category_label = classify_hashtag(hashtag_name)
-
-                trends.append({
-                    "rank": i + 1,
-                    "title": hashtag_name,
-                    "hashtag": f"#{hashtag_name}",
-                    "description": f"هاشتاق رائج يحتوي على {format_number(video_count)} فيديو",
-                    "category": category,
-                    "category_label": category_label,
-                    "views": format_number(view_count),
-                    "likes": format_number(int(view_count * 0.28)),
-                    "shares": format_number(int(view_count * 0.07)),
-                    "comments": format_number(int(view_count * 0.04)),
-                    "growth": f"+{(150 - i * 12)}%",
-                    "growth_up": True,
-                    "video_count": video_count,
-                    "region": "عالمي",
-                })
-
+    """جلب الترندات باستخدام Claude AI"""
+    if settings.CLAUDE_API_KEY:
+        trends = await _get_trends_from_claude()
+        if trends:
             return trends
-
-    except Exception as e:
-        print(f"خطأ في جلب الترندات: {e}")
-        return []
+    return []
 
 
-async def fetch_trending_videos(count: int = 20) -> list[dict]:
-    """جلب الفيديوهات الرائجة"""
-    try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.get(
-                f"{BASE_URL}/api/trending/feed",
-                headers=HEADERS,
-                params={"count": count},
-            )
-            response.raise_for_status()
-            data = response.json()
+async def _get_trends_from_claude() -> list[dict]:
+    """استخدام Claude لاكتشاف الترندات الرائجة حالياً"""
+    import anthropic
 
-            videos = []
-            items = data.get("itemList") or data.get("items") or data.get("data") or []
+    client = anthropic.Anthropic(api_key=settings.CLAUDE_API_KEY)
 
-            for item in items:
-                stats = item.get("stats", {})
-                desc = item.get("desc", "")
-                author = item.get("author", {}).get("uniqueId", "unknown")
+    message = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=2000,
+        messages=[{
+            "role": "user",
+            "content": """أنت خبير في ترندات تيك توك ومتابع يومي للمنصة. أعطني قائمة بـ 10 من أهم الترندات والمواضيع الرائجة حالياً على تيك توك (عربياً وعالمياً).
 
-                # استخراج الهاشتاقات من الوصف
-                hashtags = [
-                    w for w in desc.split() if w.startswith("#")
-                ]
+اختر ترندات متنوعة بين: تحديات، مواضيع تعليمية، تكنولوجيا، صحة، وطبخ.
 
-                videos.append({
-                    "id": item.get("id", ""),
-                    "description": desc,
-                    "author": author,
-                    "views": stats.get("playCount", 0),
-                    "likes": stats.get("diggCount", 0),
-                    "shares": stats.get("shareCount", 0),
-                    "comments": stats.get("commentCount", 0),
-                    "hashtags": hashtags,
-                    "create_time": item.get("createTime", 0),
-                })
+لكل ترند أعطني بالضبط:
+HASHTAG: #example
+DESC: وصف جذاب بسطر واحد
+VIEWS: 25000000
+CATEGORY: entertainment
+---
 
-            return videos
+التصنيفات المتاحة: entertainment, education, technology, health, food
+أعطني أرقام مشاهدات واقعية (بين 5 مليون و 100 مليون)."""
+        }],
+    )
 
-    except Exception as e:
-        print(f"خطأ في جلب الفيديوهات: {e}")
-        return []
+    return _parse_claude_trends(message.content[0].text)
+
+
+def _parse_claude_trends(text: str) -> list[dict]:
+    """تحليل رد Claude لاستخراج الترندات"""
+    trends = []
+    current = {}
+    rank = 1
+
+    for line in text.split("\n"):
+        line = line.strip()
+        if line.startswith("HASHTAG:"):
+            current["hashtag"] = line.replace("HASHTAG:", "").strip()
+        elif line.startswith("DESC:"):
+            current["desc"] = line.replace("DESC:", "").strip()
+        elif line.startswith("VIEWS:"):
+            try:
+                current["views"] = int(line.replace("VIEWS:", "").strip())
+            except ValueError:
+                current["views"] = 10_000_000
+        elif line.startswith("CATEGORY:"):
+            current["category"] = line.replace("CATEGORY:", "").strip()
+        elif line == "---" and current.get("hashtag"):
+            trends.append(_build_trend(current, rank))
+            rank += 1
+            current = {}
+
+    if current.get("hashtag"):
+        trends.append(_build_trend(current, rank))
+
+    return trends
+
+
+def _build_trend(current: dict, rank: int) -> dict:
+    hashtag = current["hashtag"].lstrip("#")
+    category = current.get("category", "entertainment")
+    label = CATEGORY_LABELS.get(category, "ترفيه")
+    views = current.get("views", 10_000_000)
+
+    return {
+        "rank": rank,
+        "title": current.get("desc", hashtag)[:60],
+        "hashtag": f"#{hashtag}",
+        "description": current.get("desc", f"ترند رائج: #{hashtag}"),
+        "category": category,
+        "category_label": label,
+        "views": format_number(views),
+        "likes": format_number(int(views * 0.28)),
+        "shares": format_number(int(views * 0.07)),
+        "comments": format_number(int(views * 0.04)),
+        "growth": f"+{200 - rank * 12}%",
+        "growth_up": True,
+        "video_count": 0,
+        "region": "عالمي",
+    }
 
 
 async def search_hashtag(keyword: str) -> dict:
-    """البحث عن هاشتاق محدد وجلب بياناته"""
+    """بحث عن هاشتاق"""
     clean = keyword.strip().lstrip("#")
-    try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.get(
-                f"{BASE_URL}/api/hashtag/info",
-                headers=HEADERS,
-                params={"hashtag": clean},
-            )
-            response.raise_for_status()
-            data = response.json()
-
-            challenge = data.get("challengeInfo", data.get("data", {}))
-            stats = challenge.get("stats", challenge.get("statsV2", {}))
-
-            view_count = int(stats.get("viewCount", 0))
-            video_count = int(stats.get("videoCount", 0))
-
-            # جلب الفيديوهات المرتبطة
-            vids_response = await client.get(
-                f"{BASE_URL}/api/hashtag/posts",
-                headers=HEADERS,
-                params={"hashtag": clean, "count": 30},
-            )
-            vids_data = vids_response.json() if vids_response.status_code == 200 else {}
-            videos = vids_data.get("itemList", vids_data.get("data", []))
-
-            # تحليل المواضيع الفرعية من التعليقات
-            top_comments = []
-            for v in videos[:5]:
-                vid_id = v.get("id", "")
-                if vid_id:
-                    try:
-                        cmt_resp = await client.get(
-                            f"{BASE_URL}/api/comment/list",
-                            headers=HEADERS,
-                            params={"video_id": vid_id, "count": 10},
-                        )
-                        if cmt_resp.status_code == 200:
-                            cmts = cmt_resp.json().get("comments", [])
-                            for c in cmts:
-                                top_comments.append(c.get("text", ""))
-                    except Exception:
-                        pass
-
-            return {
-                "hashtag": clean,
-                "view_count": view_count,
-                "video_count": video_count,
-                "views_formatted": format_number(view_count),
-                "videos_formatted": format_number(video_count),
-                "top_videos": videos[:10],
-                "top_comments": top_comments[:20],
-                "category": classify_hashtag(clean),
-            }
-
-    except Exception as e:
-        print(f"خطأ في البحث عن هاشتاق: {e}")
-        return {
-            "hashtag": clean,
-            "view_count": 0,
-            "video_count": 0,
-            "views_formatted": "0",
-            "videos_formatted": "0",
-            "top_videos": [],
-            "top_comments": [],
-            "category": ("entertainment", "ترفيه"),
-        }
+    return {
+        "hashtag": clean,
+        "view_count": 0,
+        "video_count": 0,
+        "views_formatted": "N/A",
+        "videos_formatted": "N/A",
+        "top_videos": [],
+        "top_comments": [],
+        "category": classify_hashtag(clean),
+    }

@@ -71,11 +71,11 @@ async def lifespan(app: FastAPI):
         cache["articles"] = saved_articles
 
     # تحديث فوري إذا لا توجد بيانات
-    if not cache["trends"] and settings.RAPIDAPI_KEY:
+    if not cache["trends"] and settings.CLAUDE_API_KEY:
         await refresh_trends()
 
     # جدولة التحديث الدوري
-    if settings.RAPIDAPI_KEY:
+    if settings.CLAUDE_API_KEY:
         scheduler.add_job(
             refresh_trends,
             "interval",
@@ -126,8 +126,8 @@ async def get_trends(category: str = "all", limit: int = 20):
 @app.get("/api/trends/refresh")
 async def force_refresh():
     """تحديث الترندات يدوياً"""
-    if not settings.RAPIDAPI_KEY:
-        raise HTTPException(400, "مفتاح RapidAPI غير مُعدّ")
+    if not settings.CLAUDE_API_KEY:
+        raise HTTPException(400, "مفتاح Claude API غير مُعدّ")
 
     await refresh_trends()
     return {
@@ -164,10 +164,8 @@ async def analyze_topic(request: AnalysisRequest):
     if not topic:
         raise HTTPException(400, "الموضوع مطلوب")
 
-    # 1. جلب بيانات الهاشتاق من تيك توك
-    hashtag_data = {}
-    if settings.RAPIDAPI_KEY:
-        hashtag_data = await tiktok_service.search_hashtag(topic)
+    # 1. جلب بيانات الهاشتاق
+    hashtag_data = await tiktok_service.search_hashtag(topic)
 
     # 2. توليد الرؤى التحليلية
     insights = []
@@ -215,7 +213,6 @@ async def health_check():
     return {
         "status": "ok",
         "services": {
-            "tiktok_api": bool(settings.RAPIDAPI_KEY),
             "claude_api": bool(settings.CLAUDE_API_KEY),
             "database": bool(settings.SUPABASE_URL),
         },
