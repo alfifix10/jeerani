@@ -90,7 +90,7 @@ function initLanding() {
 // ---- طلب الموقع ----
 function requestLocation() {
     const btn = document.getElementById('joinBtn');
-    btn.textContent = '📍 جاري تحديد موقعك...';
+    btn.textContent = '⏳ انتظر...';
     btn.disabled = true;
 
     if (!navigator.geolocation) {
