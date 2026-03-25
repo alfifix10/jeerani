@@ -59,19 +59,19 @@ async def refresh_trends():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """أحداث بدء وإيقاف التطبيق"""
-    # تحديث فوري إذا لا توجد بيانات
-    if not cache["trends"] and settings.CLAUDE_API_KEY:
-        await refresh_trends()
+    import asyncio
 
     # جدولة التحديث الدوري
     if settings.CLAUDE_API_KEY:
+        # تحديث في الخلفية بعد بدء الخادم (لا يعيق فتح المنفذ)
+        asyncio.create_task(refresh_trends())
         scheduler.add_job(
             refresh_trends,
             "interval",
             minutes=settings.UPDATE_INTERVAL_MINUTES,
         )
         scheduler.start()
-        print(f"⏰ التحديث التلقائي كل {settings.UPDATE_INTERVAL_MINUTES} دقيقة")
+        print(f"⏰ الخادم جاهز - التحديث يعمل في الخلفية")
 
     yield
 
