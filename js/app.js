@@ -1,18 +1,95 @@
 // ========================================
 // TrendScope - Main Application
+// يتصل بالـ Backend API أو يستخدم البيانات المحلية كاحتياط
 // ========================================
 
-document.addEventListener('DOMContentLoaded', () => {
+// ضع رابط Render هنا بعد النشر، مثال: https://trendscope-api.onrender.com
+const RENDER_URL = '';
+
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8000'
+    : RENDER_URL;
+
+let liveTrends = [];
+let liveArticles = [];
+let backendAvailable = false;
+
+document.addEventListener('DOMContentLoaded', async () => {
     initParticles();
     initNavbar();
     initStats();
-    renderTrends();
-    renderArticles();
-    initAnalyzer();
-    initFilters();
     initModal();
+    initFilters();
+    initAnalyzer();
     duplicateTicker();
+
+    // محاولة الاتصال بالـ Backend
+    await checkBackend();
+
+    if (backendAvailable) {
+        await loadLiveTrends();
+        await loadLiveArticles();
+    } else {
+        // استخدام البيانات المحلية كاحتياط
+        renderTrends('all', trendsData);
+        renderArticles(articlesData);
+    }
 });
+
+// ---- Backend Connection ----
+async function checkBackend() {
+    try {
+        const res = await fetch(`${API_BASE}/api/health`, { signal: AbortSignal.timeout(3000) });
+        if (res.ok) {
+            const data = await res.json();
+            backendAvailable = true;
+            console.log('✅ Backend متصل', data);
+        }
+    } catch {
+        backendAvailable = false;
+        console.log('ℹ️ Backend غير متوفر - استخدام البيانات المحلية');
+    }
+}
+
+async function loadLiveTrends(category = 'all') {
+    try {
+        const res = await fetch(`${API_BASE}/api/trends?category=${category}`);
+        const json = await res.json();
+        if (json.success && json.data.length > 0) {
+            liveTrends = json.data;
+            renderTrends('all', liveTrends);
+            updateTicker(liveTrends);
+            return;
+        }
+    } catch (e) {
+        console.log('خطأ في جلب الترندات:', e);
+    }
+    renderTrends('all', trendsData);
+}
+
+async function loadLiveArticles() {
+    try {
+        const res = await fetch(`${API_BASE}/api/articles`);
+        const json = await res.json();
+        if (json.success && json.data.length > 0) {
+            liveArticles = json.data;
+            renderArticles(liveArticles);
+            return;
+        }
+    } catch (e) {
+        console.log('خطأ في جلب المقالات:', e);
+    }
+    renderArticles(articlesData);
+}
+
+function updateTicker(trends) {
+    const ticker = document.getElementById('tickerContent');
+    ticker.innerHTML = '';
+    trends.slice(0, 10).forEach(t => {
+        ticker.innerHTML += `<span class="ticker-item">${t.hashtag} <em>${t.views}</em></span>`;
+    });
+    ticker.innerHTML += ticker.innerHTML; // تكرار للحركة
+}
 
 // ---- Particles Background ----
 function initParticles() {
@@ -88,22 +165,28 @@ function animateNumber(el) {
 }
 
 // ---- Render Trends ----
-function renderTrends(filter = 'all') {
+function renderTrends(filter = 'all', data = null) {
     const grid = document.getElementById('trendsGrid');
     grid.innerHTML = '';
 
+    const source = data || liveTrends.length > 0 ? liveTrends : trendsData;
     const filtered = filter === 'all'
-        ? trendsData
-        : trendsData.filter(t => t.category === filter);
+        ? source
+        : source.filter(t => t.category === filter);
 
     filtered.forEach((trend, i) => {
         const card = document.createElement('div');
         card.className = 'trend-card';
         card.style.animationDelay = (i * 0.1) + 's';
+
+        // دعم كلا التنسيقين (backend snake_case و frontend camelCase)
+        const catLabel = trend.category_label || trend.categoryLabel || trend.category;
+        const growthUp = trend.growth_up !== undefined ? trend.growth_up : trend.growthUp;
+
         card.innerHTML = `
             <div class="trend-card-header">
                 <div class="trend-rank">${trend.rank}</div>
-                <span class="trend-category">${trend.categoryLabel}</span>
+                <span class="trend-category">${catLabel}</span>
             </div>
             <div class="trend-card-body">
                 <h3>${trend.title}</h3>
@@ -115,7 +198,7 @@ function renderTrends(filter = 'all') {
                     <span>&#10084;&#65039; ${trend.likes}</span>
                     <span>&#128257; ${trend.shares}</span>
                 </div>
-                <span class="trend-growth ${trend.growthUp ? '' : 'down'}">${trend.growth}</span>
+                <span class="trend-growth ${growthUp ? '' : 'down'}">${trend.growth}</span>
             </div>
         `;
         card.addEventListener('click', () => {
@@ -130,34 +213,54 @@ function renderTrends(filter = 'all') {
 // ---- Filters ----
 function initFilters() {
     document.querySelectorAll('.filter-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
+        tab.addEventListener('click', async () => {
             document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            renderTrends(tab.dataset.filter);
+            const filter = tab.dataset.filter;
+
+            if (backendAvailable) {
+                await loadLiveTrends(filter);
+            } else {
+                renderTrends(filter, trendsData);
+            }
         });
     });
 }
 
 // ---- Render Articles ----
-function renderArticles() {
+function renderArticles(articles) {
     const grid = document.getElementById('articlesGrid');
     grid.innerHTML = '';
 
-    articlesData.forEach((article, i) => {
+    const gradients = [
+        'linear-gradient(135deg, #1a1a2e, #e94560)',
+        'linear-gradient(135deg, #0f3460, #e94560)',
+        'linear-gradient(135deg, #533483, #e94560)',
+    ];
+
+    articles.forEach((article, i) => {
         const card = document.createElement('div');
         card.className = 'article-card';
         card.style.animationDelay = (i * 0.1) + 's';
+
+        // دعم كلا التنسيقين
+        const readTime = article.read_time || article.readTime || '5 دقائق';
+        const date = article.created_at ? timeAgo(article.created_at) : (article.date || 'حديث');
+        const emoji = article.emoji || '📝';
+        const bg = article.bgGradient || gradients[i % gradients.length];
+        const category = article.category || 'تحليل';
+
         card.innerHTML = `
             <div class="article-image">
-                <div class="article-image-bg" style="background:${article.bgGradient}">${article.emoji}</div>
-                <span class="article-badge">${article.category}</span>
+                <div class="article-image-bg" style="background:${bg}">${emoji}</div>
+                <span class="article-badge">${category}</span>
             </div>
             <div class="article-body">
                 <h3>${article.title}</h3>
                 <p>${article.excerpt}</p>
                 <div class="article-meta">
-                    <span class="article-read-time">&#128214; ${article.readTime}</span>
-                    <span>${article.date}</span>
+                    <span class="article-read-time">&#128214; ${readTime}</span>
+                    <span>${date}</span>
                 </div>
             </div>
         `;
@@ -183,25 +286,42 @@ function initModal() {
 
 function openArticle(article) {
     const body = document.getElementById('modalBody');
-    let html = `
-        <h2 class="article-full-title">${article.content.title}</h2>
-        <div class="article-full-meta">
-            <span>&#128214; ${article.readTime}</span>
-            <span>&#128197; ${article.date}</span>
-            <span>&#127991;&#65039; ${article.category}</span>
-        </div>
-        <div class="article-full-content">
-    `;
 
-    article.content.sections.forEach(section => {
-        html += `<h3>${section.heading}</h3><p>${section.text}</p>`;
-        if (section.fact) {
-            html += `<div class="fact-box">&#128161; حقيقة: ${section.fact}</div>`;
-        }
-    });
+    // مقال من الـ Backend (HTML مباشر)
+    if (typeof article.content === 'string') {
+        const readTime = article.read_time || article.readTime || '5 دقائق';
+        const date = article.created_at ? timeAgo(article.created_at) : 'حديث';
+        body.innerHTML = `
+            <h2 class="article-full-title">${article.title}</h2>
+            <div class="article-full-meta">
+                <span>&#128214; ${readTime}</span>
+                <span>&#128197; ${date}</span>
+                <span>&#127991;&#65039; ${article.category || 'تحليل'}</span>
+            </div>
+            <div class="article-full-content">${article.content}</div>
+        `;
+    }
+    // مقال محلي (بيانات مهيكلة)
+    else if (article.content && article.content.sections) {
+        let html = `
+            <h2 class="article-full-title">${article.content.title}</h2>
+            <div class="article-full-meta">
+                <span>&#128214; ${article.readTime}</span>
+                <span>&#128197; ${article.date}</span>
+                <span>&#127991;&#65039; ${article.category}</span>
+            </div>
+            <div class="article-full-content">
+        `;
+        article.content.sections.forEach(section => {
+            html += `<h3>${section.heading}</h3><p>${section.text}</p>`;
+            if (section.fact) {
+                html += `<div class="fact-box">&#128161; حقيقة: ${section.fact}</div>`;
+            }
+        });
+        html += '</div>';
+        body.innerHTML = html;
+    }
 
-    html += '</div>';
-    body.innerHTML = html;
     document.getElementById('articleModal').classList.add('active');
 }
 
@@ -212,7 +332,7 @@ function initAnalyzer() {
     const btnText = btn.querySelector('span');
     const btnLoader = btn.querySelector('.btn-loader');
 
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
         const topic = input.value.trim();
         if (!topic) {
             input.style.borderColor = '#fe2c55';
@@ -223,12 +343,17 @@ function initAnalyzer() {
         btnLoader.style.display = 'block';
         btn.disabled = true;
 
-        setTimeout(() => {
-            generateAnalysis(topic);
-            btnText.style.display = '';
-            btnLoader.style.display = 'none';
-            btn.disabled = false;
-        }, 2000);
+        if (backendAvailable) {
+            await analyzeViaBackend(topic);
+        } else {
+            // تأخير وهمي + بيانات محلية
+            await new Promise(r => setTimeout(r, 1500));
+            generateLocalAnalysis(topic);
+        }
+
+        btnText.style.display = '';
+        btnLoader.style.display = 'none';
+        btn.disabled = false;
     });
 
     input.addEventListener('keypress', (e) => {
@@ -238,12 +363,61 @@ function initAnalyzer() {
     document.querySelectorAll('.suggestion-chip').forEach(chip => {
         chip.addEventListener('click', () => {
             input.value = chip.dataset.topic;
-            btn.click();
+            document.getElementById('analyzeBtn').click();
         });
     });
 }
 
-function generateAnalysis(topic) {
+async function analyzeViaBackend(topic) {
+    try {
+        const res = await fetch(`${API_BASE}/api/analyze`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ topic }),
+        });
+        const json = await res.json();
+
+        if (json.success) {
+            const d = json.data;
+            const result = document.getElementById('analysisResult');
+            result.style.display = 'block';
+
+            document.getElementById('resultTitle').textContent = 'تحليل: ' + d.topic;
+            document.getElementById('resultViews').innerHTML = '&#128065; ' + d.views + ' مشاهدة';
+            document.getElementById('resultTrend').textContent = d.growth + ' نمو';
+
+            drawChart(topic, d.chart_data);
+            renderInsights(d.insights);
+            document.getElementById('generatedArticle').innerHTML = d.article;
+
+            result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+        }
+    } catch (e) {
+        console.log('خطأ في التحليل عبر Backend:', e);
+    }
+    generateLocalAnalysis(topic);
+}
+
+function renderInsights(insights) {
+    const container = document.getElementById('insightsList');
+    container.innerHTML = '';
+
+    insights.forEach(insight => {
+        const card = document.createElement('div');
+        card.className = 'insight-card';
+        card.innerHTML = `
+            <div class="insight-icon">${insight.icon}</div>
+            <div>
+                <h5>${insight.title}</h5>
+                <p>${insight.text}</p>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function generateLocalAnalysis(topic) {
     const result = document.getElementById('analysisResult');
     result.style.display = 'block';
 
@@ -251,19 +425,18 @@ function generateAnalysis(topic) {
     const growth = '+' + Math.floor(Math.random() * 500 + 50) + '%';
 
     document.getElementById('resultTitle').textContent = 'تحليل: ' + topic;
-    document.getElementById('resultViews').textContent = '&#128065; ' + views + ' مشاهدة';
     document.getElementById('resultViews').innerHTML = '&#128065; ' + views + ' مشاهدة';
     document.getElementById('resultTrend').textContent = growth + ' نمو';
 
     drawChart(topic);
-    generateInsights(topic);
-    generateArticle(topic);
+    generateLocalInsights(topic);
+    generateLocalArticle(topic);
 
     result.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ---- Chart Drawing ----
-function drawChart(topic) {
+function drawChart(topic, apiData = null) {
     const canvas = document.getElementById('trendChart');
     const ctx = canvas.getContext('2d');
     canvas.width = canvas.offsetWidth * 2;
@@ -278,18 +451,22 @@ function drawChart(topic) {
 
     ctx.clearRect(0, 0, w, h);
 
-    // Generate data
+    // بيانات من الـ API أو محلية
     const days = 14;
-    const data = [];
-    let val = Math.random() * 20 + 10;
-    for (let i = 0; i < days; i++) {
-        val += (Math.random() - 0.3) * 15;
-        val = Math.max(5, val);
-        data.push(val);
+    let data;
+    if (apiData && apiData.length === days) {
+        data = apiData;
+    } else {
+        data = [];
+        let val = Math.random() * 20 + 10;
+        for (let i = 0; i < days; i++) {
+            val += (Math.random() - 0.3) * 15;
+            val = Math.max(5, val);
+            data.push(val);
+        }
+        data[days - 1] = Math.max(...data) * 1.2;
+        data[days - 2] = Math.max(...data) * 0.9;
     }
-    // Make it trend upward
-    data[days - 1] = Math.max(...data) * 1.2;
-    data[days - 2] = Math.max(...data) * 0.9;
 
     const maxVal = Math.max(...data) * 1.1;
 
@@ -304,7 +481,7 @@ function drawChart(topic) {
         ctx.stroke();
     }
 
-    // Draw gradient area
+    // Gradient area
     const gradient = ctx.createLinearGradient(0, padding, 0, h - padding);
     gradient.addColorStop(0, 'rgba(254, 44, 85, 0.3)');
     gradient.addColorStop(1, 'rgba(254, 44, 85, 0)');
@@ -327,7 +504,7 @@ function drawChart(topic) {
     ctx.fillStyle = gradient;
     ctx.fill();
 
-    // Draw line
+    // Line
     ctx.beginPath();
     data.forEach((val, i) => {
         const x = padding + (chartW / (days - 1)) * i;
@@ -344,7 +521,7 @@ function drawChart(topic) {
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Draw dots
+    // Dots
     data.forEach((val, i) => {
         const x = padding + (chartW / (days - 1)) * i;
         const y = h - padding - (val / maxVal) * chartH;
@@ -370,8 +547,8 @@ function drawChart(topic) {
     });
 }
 
-// ---- Generate Insights ----
-function generateInsights(topic) {
+// ---- Local Fallback: Insights ----
+function generateLocalInsights(topic) {
     const container = document.getElementById('insightsList');
     container.innerHTML = '';
 
@@ -403,8 +580,8 @@ function generateInsights(topic) {
     });
 }
 
-// ---- Generate Article ----
-function generateArticle(topic) {
+// ---- Local Fallback: Article ----
+function generateLocalArticle(topic) {
     const container = document.getElementById('generatedArticle');
     const template = analysisTemplates.articleTemplates[0];
 
@@ -416,7 +593,18 @@ function generateArticle(topic) {
     container.innerHTML = html;
 }
 
-// ---- Duplicate Ticker for seamless loop ----
+// ---- Helpers ----
+function timeAgo(dateStr) {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diff = Math.floor((now - date) / 1000);
+
+    if (diff < 3600) return `منذ ${Math.floor(diff / 60)} دقيقة`;
+    if (diff < 86400) return `منذ ${Math.floor(diff / 3600)} ساعة`;
+    if (diff < 604800) return `منذ ${Math.floor(diff / 86400)} يوم`;
+    return `منذ ${Math.floor(diff / 604800)} أسبوع`;
+}
+
 function duplicateTicker() {
     const ticker = document.getElementById('tickerContent');
     ticker.innerHTML += ticker.innerHTML;
