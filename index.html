@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Trends Analyzer - محلل ترندات تيك توك</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Particles Background -->
+    <div id="particles"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">&#9835;</span>
+                <span class="logo-text">TrendScope</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home" class="active">الرئيسية</a></li>
+                <li><a href="#trends">الترندات</a></li>
+                <li><a href="#articles">المقالات</a></li>
+                <li><a href="#analyzer">المحلل</a></li>
+                <li><a href="#about">حول</a></li>
+            </ul>
+            <button class="menu-toggle" id="menuToggle">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">محلل ترندات تيك توك الذكي</div>
+            <h1 class="hero-title">
+                اكتشف <span class="gradient-text">الحقائق المخفية</span>
+                <br>وراء ترندات تيك توك
+            </h1>
+            <p class="hero-subtitle">
+                نحلل أهم المواضيع الرائجة على تيك توك ونكشف لك الحقائق المذهلة التي لا يعرفها أغلب الناس.
+                مقالات حصرية مبنية على تحليل عميق للبيانات.
+            </p>
+            <div class="hero-actions">
+                <a href="#trends" class="btn btn-primary">
+                    <span>اكتشف الترندات</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <a href="#analyzer" class="btn btn-secondary">
+                    <span>حلل موضوعاً</span>
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number" data-target="1247">0</span>
+                    <span class="stat-label">ترند محلل</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" data-target="368">0</span>
+                    <span class="stat-label">مقال حصري</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" data-target="52">0</span>
+                    <span class="stat-label">حقيقة مكتشفة يومياً</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="phone-mockup">
+                <div class="phone-screen">
+                    <div class="tiktok-feed">
+                        <div class="feed-item active">
+                            <div class="feed-overlay">
+                                <span class="trending-badge">&#128293; ترند #1</span>
+                                <h3>التحدي الجديد يجتاح العالم</h3>
+                                <p>45.2M مشاهدة</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Trends Ticker -->
+    <div class="trends-ticker">
+        <div class="ticker-label">&#128308; ترندات حية</div>
+        <div class="ticker-wrapper">
+            <div class="ticker-content" id="tickerContent">
+                <span class="ticker-item">#تحدي_الرقص_الجديد <em>12.5M</em></span>
+                <span class="ticker-item">#اسرار_لا_تعرفها <em>8.3M</em></span>
+                <span class="ticker-item">#حقائق_صادمة <em>15.1M</em></span>
+                <span class="ticker-item">#الذكاء_الاصطناعي <em>22.7M</em></span>
+                <span class="ticker-item">#وصفات_سهلة <em>9.8M</em></span>
+                <span class="ticker-item">#تجارب_علمية <em>6.4M</em></span>
+                <span class="ticker-item">#اكتشافات_2026 <em>18.9M</em></span>
+                <span class="ticker-item">#نصائح_حياتية <em>11.2M</em></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trending Topics Section -->
+    <section id="trends" class="section trends-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">تحديث مباشر</span>
+                <h2 class="section-title">أهم الترندات <span class="gradient-text">الآن</span></h2>
+                <p class="section-desc">تتبع مباشر لأكثر المواضيع رواجاً على تيك توك مع تحليل عميق لكل ترند</p>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all">الكل</button>
+                <button class="filter-tab" data-filter="entertainment">ترفيه</button>
+                <button class="filter-tab" data-filter="education">تعليم</button>
+                <button class="filter-tab" data-filter="technology">تكنولوجيا</button>
+                <button class="filter-tab" data-filter="health">صحة</button>
+                <button class="filter-tab" data-filter="food">طبخ</button>
+            </div>
+
+            <!-- Trends Grid -->
+            <div class="trends-grid" id="trendsGrid">
+                <!-- Cards will be dynamically inserted -->
+            </div>
+
+            <div class="load-more">
+                <button class="btn btn-outline" id="loadMoreTrends">تحميل المزيد</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Articles Section -->
+    <section id="articles" class="section articles-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">مقالات حصرية</span>
+                <h2 class="section-title">حقائق <span class="gradient-text">لا يعرفها</span> أغلب الناس</h2>
+                <p class="section-desc">مقالات معمقة تكشف الحقائق المخفية وراء أشهر ترندات تيك توك</p>
+            </div>
+
+            <div class="articles-grid" id="articlesGrid">
+                <!-- Articles will be dynamically inserted -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Article Modal -->
+    <div class="modal-overlay" id="articleModal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModal">&times;</button>
+            <div class="modal-body" id="modalBody">
+                <!-- Article content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Analyzer Section -->
+    <section id="analyzer" class="section analyzer-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">أداة ذكية</span>
+                <h2 class="section-title">حلل أي <span class="gradient-text">ترند</span> بنفسك</h2>
+                <p class="section-desc">أدخل أي هاشتاق أو موضوع رائج وسنكشف لك الحقائق المخفية خلاله</p>
+            </div>
+
+            <div class="analyzer-box">
+                <div class="analyzer-input-group">
+                    <input type="text" id="analyzerInput" class="analyzer-input" placeholder="أدخل الهاشتاق أو الموضوع... مثال: #تحدي_الرقص">
+                    <button class="btn btn-primary analyzer-btn" id="analyzeBtn">
+                        <span>حلل الآن</span>
+                        <div class="btn-loader" style="display:none"></div>
+                    </button>
+                </div>
+
+                <div class="analyzer-suggestions">
+                    <span>اقتراحات:</span>
+                    <button class="suggestion-chip" data-topic="#الذكاء_الاصطناعي">#الذكاء_الاصطناعي</button>
+                    <button class="suggestion-chip" data-topic="#تحدي_30_يوم">#تحدي_30_يوم</button>
+                    <button class="suggestion-chip" data-topic="#اسرار_النجاح">#اسرار_النجاح</button>
+                    <button class="suggestion-chip" data-topic="#حقائق_علمية">#حقائق_علمية</button>
+                </div>
+
+                <!-- Analysis Result -->
+                <div class="analysis-result" id="analysisResult" style="display:none">
+                    <div class="result-header">
+                        <h3 id="resultTitle"></h3>
+                        <div class="result-meta">
+                            <span class="result-views" id="resultViews"></span>
+                            <span class="result-trend" id="resultTrend"></span>
+                        </div>
+                    </div>
+
+                    <div class="result-chart">
+                        <h4>مؤشر الانتشار</h4>
+                        <canvas id="trendChart" width="600" height="250"></canvas>
+                    </div>
+
+                    <div class="result-insights">
+                        <h4>الحقائق المكتشفة</h4>
+                        <div id="insightsList"></div>
+                    </div>
+
+                    <div class="result-article">
+                        <h4>المقال التحليلي</h4>
+                        <div id="generatedArticle" class="generated-article"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section about-section">
+        <div class="container">
+            <div class="about-grid">
+                <div class="about-content">
+                    <span class="section-tag">من نحن</span>
+                    <h2 class="section-title">نكشف ما <span class="gradient-text">يخفيه</span> الترند</h2>
+                    <p>TrendScope هو محلل ترندات تيك توك الذكي الذي يستخدم تقنيات تحليل البيانات المتقدمة لاكتشاف الأنماط المخفية والحقائق المذهلة وراء كل ترند.</p>
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <div class="feature-icon">&#128269;</div>
+                            <div>
+                                <h4>تحليل عميق</h4>
+                                <p>نحلل ملايين الفيديوهات لاكتشاف الأنماط المخفية</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">&#9889;</div>
+                            <div>
+                                <h4>تحديث فوري</h4>
+                                <p>نتابع الترندات لحظة بلحظة ونكتشفها قبل الجميع</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">&#128218;</div>
+                            <div>
+                                <h4>مقالات حصرية</h4>
+                                <p>نكتب مقالات تكشف حقائق لا يعرفها 99% من الناس</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">&#127793;</div>
+                            <div>
+                                <h4>تنبؤ بالترندات</h4>
+                                <p>نتنبأ بالمواضيع التي ستصبح ترنداً قبل حدوثها</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-visual">
+                    <div class="stats-card">
+                        <div class="stats-card-header">&#128200; إحصائيات المنصة</div>
+                        <div class="stats-card-body">
+                            <div class="stat-row">
+                                <span>ترندات تم تحليلها</span>
+                                <span class="stat-value">12,847+</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>مقالات منشورة</span>
+                                <span class="stat-value">3,621+</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>حقائق مكتشفة</span>
+                                <span class="stat-value">28,493+</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>مستخدمين نشطين</span>
+                                <span class="stat-value">156K+</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>دقة التنبؤات</span>
+                                <span class="stat-value">94.7%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <span class="logo-icon">&#9835;</span>
+                        <span class="logo-text">TrendScope</span>
+                    </div>
+                    <p>محلل ترندات تيك توك الذكي - نكشف الحقائق المخفية وراء كل ترند</p>
+                </div>
+                <div class="footer-links">
+                    <h4>روابط سريعة</h4>
+                    <a href="#home">الرئيسية</a>
+                    <a href="#trends">الترندات</a>
+                    <a href="#articles">المقالات</a>
+                    <a href="#analyzer">المحلل</a>
+                </div>
+                <div class="footer-links">
+                    <h4>التصنيفات</h4>
+                    <a href="#">ترفيه</a>
+                    <a href="#">تكنولوجيا</a>
+                    <a href="#">تعليم</a>
+                    <a href="#">صحة ولياقة</a>
+                </div>
+                <div class="footer-links">
+                    <h4>تواصل معنا</h4>
+                    <a href="#">تويتر</a>
+                    <a href="#">انستغرام</a>
+                    <a href="#">تيك توك</a>
+                    <a href="#">البريد الإلكتروني</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 TrendScope - جميع الحقوق محفوظة</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
