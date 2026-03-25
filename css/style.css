@@ -472,18 +472,18 @@ body {
 /* Chat Input */
 .chat-input-bar {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    gap: 0;
     padding: 12px 16px 24px;
     background: rgba(10, 10, 15, 0.9);
     backdrop-filter: blur(20px);
     border-top: 1px solid var(--glass-border);
     z-index: 20;
     flex-shrink: 0;
+    position: relative;
 }
 .chat-input-bar input {
     flex: 1;
-    padding: 14px 18px;
+    padding: 16px 80px 16px 18px;
     border-radius: 16px;
     border: 2px solid var(--glass-border);
     background: var(--dark-2);
@@ -498,28 +498,28 @@ body {
 }
 .chat-input-bar input::placeholder { color: var(--text-muted); }
 
-.send-btn {
-    display: none;
-}
+.send-btn { display: none; }
 .chat-input-bar .btn-send {
-    width: 100%;
-    padding: 16px;
-    border-radius: 16px;
+    position: absolute;
+    left: 22px;
+    top: 50%;
+    transform: translateY(calc(-50% - 6px));
+    padding: 10px 20px;
+    border-radius: 12px;
     border: none;
     background: var(--gradient-1);
     color: white;
     font-family: 'Cairo', sans-serif;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     transition: var(--transition);
-    box-shadow: 0 4px 20px rgba(108, 92, 231, 0.4);
+    box-shadow: 0 2px 12px rgba(108, 92, 231, 0.4);
 }
 .chat-input-bar .btn-send:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(108, 92, 231, 0.5);
+    box-shadow: 0 4px 16px rgba(108, 92, 231, 0.5);
 }
-.chat-input-bar .btn-send:active { transform: scale(0.97); }
+.chat-input-bar .btn-send:active { transform: translateY(calc(-50% - 6px)) scale(0.95); }
 
 /* ---- Typing indicator ---- */
 .typing-indicator {
