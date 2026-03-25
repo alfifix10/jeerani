@@ -8,15 +8,19 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import settings
 from models import AnalysisRequest, AnalysisResult
 import tiktok_service
 import article_generator
-import database
+
+# database اختياري - يعمل بدونه
+try:
+    import database
+    HAS_DB = True
+except ImportError:
+    HAS_DB = False
 
 # ---- الكاش المؤقت (في الذاكرة) ----
 cache = {
@@ -34,9 +38,8 @@ async def refresh_trends():
     trends = await tiktok_service.fetch_trending_hashtags()
     if trends:
         cache["trends"] = trends
-        await database.save_trends(trends)
 
-        # توليد مقالات لأهم 3 ترندات إذا لم تكن موجودة
+        # توليد مقالات لأهم 3 ترندات
         for trend in trends[:3]:
             hashtag = trend["hashtag"].lstrip("#")
             hashtag_data = await tiktok_service.search_hashtag(hashtag)
@@ -45,15 +48,10 @@ async def refresh_trends():
                 article_data["category"] = trend["category_label"]
                 article_data["read_time"] = f"{random.randint(5, 12)} دقائق"
                 article_data["emoji"] = random.choice(["🧠", "🔍", "⚡", "🎯", "💡", "🌍"])
-                await database.save_article(article_data)
+                cache["articles"].append(article_data)
                 print(f"✅ تم توليد مقال عن: {hashtag}")
             except Exception as e:
                 print(f"❌ خطأ في توليد مقال عن {hashtag}: {e}")
-
-    # جلب المقالات المحفوظة
-    saved_articles = await database.get_articles()
-    if saved_articles:
-        cache["articles"] = saved_articles
 
     print(f"✅ تم تحديث {len(trends)} ترند و {len(cache['articles'])} مقال")
 
@@ -61,15 +59,6 @@ async def refresh_trends():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """أحداث بدء وإيقاف التطبيق"""
-    # جلب البيانات المحفوظة أولاً
-    saved_trends = await database.get_saved_trends()
-    if saved_trends:
-        cache["trends"] = saved_trends
-
-    saved_articles = await database.get_articles()
-    if saved_articles:
-        cache["articles"] = saved_articles
-
     # تحديث فوري إذا لا توجد بيانات
     if not cache["trends"] and settings.CLAUDE_API_KEY:
         await refresh_trends()
@@ -151,10 +140,11 @@ async def get_articles(limit: int = 20):
 @app.get("/api/articles/{article_id}")
 async def get_article(article_id: str):
     """جلب مقال واحد"""
-    article = await database.get_article_by_id(article_id)
-    if not article:
-        raise HTTPException(404, "المقال غير موجود")
-    return {"success": True, "data": article}
+    articles = cache.get("articles", [])
+    for a in articles:
+        if a.get("id") == article_id:
+            return {"success": True, "data": a}
+    raise HTTPException(404, "المقال غير موجود")
 
 
 @app.post("/api/analyze")
@@ -223,13 +213,10 @@ async def health_check():
     }
 
 
-# ---- Serve Frontend ----
-app.mount("/static", StaticFiles(directory="../"), name="static")
-
-
+# ---- Root ----
 @app.get("/")
-async def serve_frontend():
-    return FileResponse("../index.html")
+async def root():
+    return {"message": "TrendScope API - استخدم /api/health للفحص"}
 
 
 # ---- Helpers ----
