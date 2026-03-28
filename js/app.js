@@ -252,9 +252,9 @@ function startChat(userId, userName, uLat, uLng) {
     msgsDiv.innerHTML = '';
 
     // استعادة الرسائل السابقة
-    const history = chatHistory.get(userId) || [];
-    if (history.length > 0) {
-        history.forEach(m => addMsg(m.text, m.isMe));
+    const prevMsgs = chatHistory.get(userId) || [];
+    if (prevMsgs.length > 0) {
+        prevMsgs.forEach(m => addMsg(m.text, m.isMe));
     } else {
         addSystemMsg(`بدأت محادثة مع ${userName} 💨`);
     }
