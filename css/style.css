@@ -712,3 +712,29 @@ body {
     .subtitle { font-size: 14px; }
     .features-mini span { font-size: 11px; padding: 5px 10px; }
 }
+
+/* [FIX 1] زر تعديل الاسم */
+.edit-name-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: var(--transition);
+    opacity: 0.6;
+}
+.edit-name-btn:hover {
+    opacity: 1;
+    background: var(--glass);
+}
+
+/* [FIX 4] عداد الأحرف */
+.char-counter {
+    position: absolute;
+    top: -22px;
+    left: 12px;
+    font-size: 11px;
+    color: var(--primary-light);
+    direction: ltr;
+}
