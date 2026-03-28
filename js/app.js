@@ -15,7 +15,6 @@ let myLng = 0;
 let currentChatUser = null;
 let chatChannel = null;
 let presenceChannel = null;
-let notifyChannel = null;
 let nearbyUsers = new Map();
 let unreadFrom = new Set();
 let blockedUsers = new Set(JSON.parse(localStorage.getItem('jiranak_blocked') || '[]'));
@@ -210,26 +209,6 @@ function startChat(userId) {
     msgs.innerHTML = '';
     addSystemMsg(`بدأت محادثة مع ${user.name} 💨`);
 
-    // الاشتراك في غرفة الدردشة
-    const roomId = [myId, userId].sort().join('-');
-    if (chatChannel) { chatChannel.unsubscribe(); chatChannel = null; }
-
-    let chatReady = false;
-    chatChannel = supabaseClient.channel(`chat-${roomId}`, {
-        config: { broadcast: { self: false, ack: true } }
-    });
-    chatChannel.on('broadcast', { event: 'msg' }, ({ payload }) => {
-        if (payload.from !== myId) {
-            addMsg(payload.text, false);
-            if (navigator.vibrate) navigator.vibrate(50);
-        }
-    }).subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-            chatReady = true;
-            console.log('Chat ready:', roomId);
-        }
-    });
-
     // مراقبة خروج الطرف الآخر
     const checkLeave = setInterval(() => {
         if (!nearbyUsers.has(userId) && currentChatUser?.id === userId) {
@@ -238,8 +217,8 @@ function startChat(userId) {
         }
     }, 3000);
 
-    // إعداد الإرسال (مع التأكد أن القناة جاهزة)
-    setupChatInput(userId, () => chatReady);
+    // إعداد الإرسال (نستخدم presenceChannel مباشرة - نعرف إنها تشتغل)
+    setupChatInput(userId);
 
     document.getElementById('backToPeople').onclick = () => {
         clearInterval(checkLeave);
@@ -247,11 +226,11 @@ function startChat(userId) {
     };
 }
 
-function setupChatInput(userId, isReady) {
+function setupChatInput(userId) {
     const input = document.getElementById('msgInput');
     const sendBtn = document.getElementById('sendBtn');
 
-    const sendMsg = async () => {
+    const sendMsg = () => {
         const text = input.value.trim();
         if (!text) return;
         if (text.length > 500) {
@@ -259,12 +238,6 @@ function setupChatInput(userId, isReady) {
             return;
         }
 
-        if (!isReady()) {
-            addSystemMsg('⏳ جاري الاتصال...');
-            return;
-        }
-
-        // منع السبام
         const now = Date.now();
         if (now - lastMsgTime < 1000) return;
         lastMsgTime = now;
@@ -272,21 +245,12 @@ function setupChatInput(userId, isReady) {
         addMsg(text, true);
         input.value = '';
 
-        try {
-            await chatChannel.send({
-                type: 'broadcast',
-                event: 'msg',
-                payload: { from: myId, text, ts: now }
-            });
-
-            notifyChannel.send({
-                type: 'broadcast',
-                event: 'notify',
-                payload: { from: myId, to: userId, name: myName }
-            });
-        } catch (e) {
-            addSystemMsg('❌ فشل إرسال الرسالة');
-        }
+        // إرسال عبر قناة الحضور (نفس القناة اللي تشتغل)
+        presenceChannel.send({
+            type: 'broadcast',
+            event: 'chat-msg',
+            payload: { from: myId, to: userId, text, ts: now }
+        });
     };
 
     const newSend = sendBtn.cloneNode(true);
@@ -302,7 +266,6 @@ function setupChatInput(userId, isReady) {
 
 function leaveChatScreen() {
     document.getElementById('chatMessages').innerHTML = '';
-    if (chatChannel) { chatChannel.unsubscribe(); chatChannel = null; }
     currentChatUser = null;
     showScreen('peopleScreen');
 }
@@ -346,6 +309,21 @@ function initSupabase() {
 
         presenceChannel = supabaseClient.channel('jiranak-room');
         presenceChannel
+            .on('broadcast', { event: 'chat-msg' }, ({ payload }) => {
+                // رسالة موجهة لي
+                if (payload.to === myId && payload.from !== myId) {
+                    if (currentChatUser && currentChatUser.id === payload.from) {
+                        // أنا في الدردشة مع هذا الشخص - اعرض الرسالة
+                        addMsg(payload.text, false);
+                        if (navigator.vibrate) navigator.vibrate(50);
+                    } else {
+                        // أنا في صفحة المتصلين - اعرض إشعار
+                        unreadFrom.add(payload.from);
+                        renderPeopleList();
+                        if (navigator.vibrate) navigator.vibrate(100);
+                    }
+                }
+            })
             .on('presence', { event: 'sync' }, () => {
                 const state = presenceChannel.presenceState();
                 nearbyUsers.clear();
@@ -387,19 +365,6 @@ function initSupabase() {
                 }
             });
 
-        notifyChannel = supabaseClient.channel('jiranak-notify');
-        notifyChannel
-            .on('broadcast', { event: 'notify' }, ({ payload }) => {
-                if (payload.to === myId && !blockedUsers.has(payload.from)) {
-                    if (!currentChatUser || currentChatUser.id !== payload.from) {
-                        unreadFrom.add(payload.from);
-                        renderPeopleList();
-                        if (navigator.vibrate) navigator.vibrate(100);
-                    }
-                }
-            })
-            .subscribe();
-
     } catch (e) {
         document.getElementById('onlineCount').textContent = '❌ خطأ: ' + e.message;
     }
@@ -437,8 +402,6 @@ function shareLink() {
 
 function cleanup() {
     if (presenceChannel) { presenceChannel.untrack(); presenceChannel.unsubscribe(); }
-    if (chatChannel) chatChannel.unsubscribe();
-    if (notifyChannel) notifyChannel.unsubscribe();
     nearbyUsers.clear();
     unreadFrom.clear();
     currentChatUser = null;
