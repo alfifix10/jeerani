@@ -76,6 +76,10 @@ body {
     z-index: 1;
     overflow-y: auto;
 }
+.people-content {
+    justify-content: flex-start;
+    padding-top: 0;
+}
 
 /* إطار احترافي يجمع كل المحتوى */
 .screen-content > .frame {
@@ -102,20 +106,15 @@ body {
     background: linear-gradient(90deg, transparent, rgba(108,92,231,0.4), rgba(0,206,201,0.4), transparent);
 }
 
-/* إطار صفحة الأشخاص - يشمل التوبار + القائمة */
+/* محتوى صفحة الأشخاص */
 .people-frame {
     width: 100%;
     max-width: 520px;
-    background: var(--dark-2);
-    border: 1px solid var(--glass-border);
-    border-radius: 24px;
     padding: 24px 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 0 16px 60px rgba(0, 0, 0, 0.5);
     flex: 1;
-    max-height: calc(100vh - 80px);
     overflow-y: auto;
 }
 
@@ -128,58 +127,15 @@ body {
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    overflow: hidden;
 }
 
-/* كمبيوتر: كل شيء داخل إطار مركزي */
+/* كمبيوتر */
 @media (min-width: 769px) {
-    .screen {
-        background: var(--dark);
-    }
-
-    /* التوبار يأخذ عرض كامل لكن المحتوى بالداخل محدود */
-    #peopleScreen .topbar,
-    #chatScreen .topbar {
-        width: 520px;
-        margin: 0 auto;
-        border-radius: 24px 24px 0 0;
-        border: 1px solid var(--glass-border);
-        border-bottom: 1px solid var(--glass-border);
-        background: var(--dark-2);
-        flex-shrink: 0;
-    }
-
-    #peopleScreen {
-        align-items: center;
-    }
-    #peopleScreen .screen-content {
-        padding-top: 0;
-        width: 520px;
-        flex: 1;
-        justify-content: flex-start;
-    }
-
     .people-frame {
-        border-radius: 0 0 24px 24px;
-        border-top: none;
-    }
-
-    #chatScreen {
-        padding: 0;
-        align-items: center;
+        max-width: 600px;
     }
     .chat-frame {
-        width: 520px;
-        background: var(--dark-2);
-        border: 1px solid var(--glass-border);
-        border-top: none;
-        border-radius: 0 0 24px 24px;
-        flex: 1;
-        min-height: 0;
-        overflow: hidden;
-    }
-    .chat-input-bar {
-        border-radius: 0 0 24px 24px;
+        max-width: 600px;
     }
 }
 
