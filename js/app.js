@@ -138,9 +138,11 @@ function enterPeopleScreen() {
 
     initSupabase();
 
-    document.getElementById('backToLanding').onclick = () => {
+    document.getElementById('backToLanding').onclick = async () => {
         localStorage.removeItem('jiranak_name');
-        cleanup();
+        await cleanup();
+        myId = crypto.randomUUID();
+        localStorage.setItem('jiranak_id', myId);
         showScreen('landingScreen');
         initLanding();
     };
@@ -304,7 +306,9 @@ window.addEventListener('popstate', (e) => {
 // ========== Supabase ==========
 function initSupabase() {
     try {
-        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        if (!supabaseClient) {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
         document.getElementById('onlineCount').textContent = 'جاري الاتصال...';
 
         presenceChannel = supabaseClient.channel('jiranak-room');
@@ -400,8 +404,12 @@ function shareLink() {
     }
 }
 
-function cleanup() {
-    if (presenceChannel) { presenceChannel.untrack(); presenceChannel.unsubscribe(); }
+async function cleanup() {
+    if (presenceChannel) {
+        await presenceChannel.untrack();
+        await presenceChannel.unsubscribe();
+        presenceChannel = null;
+    }
     nearbyUsers.clear();
     unreadFrom.clear();
     currentChatUser = null;
