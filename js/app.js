@@ -383,12 +383,14 @@ function enterPeopleScreen() {
             saveToHistory(msg.from, msg.text, false);
             if (navigator.vibrate) navigator.vibrate(50);
         } else {
-            // حفظ الرسالة عشان ما تضيع لما يفتح الدردشة
             saveToHistory(msg.from, msg.text, false);
             unreadFrom.add(msg.from);
-            presenceRef.once('value', s => { renderPeopleFromData(s.val() || {}); });
-            playNotif();
-            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            // الصوت فقط لو أنت بصفحة الجيران (مو بدردشة ثانية)
+            if (currentScreen === 'people') {
+                presenceRef.once('value', s => { renderPeopleFromData(s.val() || {}); });
+                playNotif();
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            }
         }
 
         snap.ref.remove();
@@ -723,14 +725,7 @@ function startChat(userId, userName, uLat, uLng) {
     inputEl.onkeypress = (e) => { if (e.key === 'Enter') sendMsg(); };
     inputEl.focus();
 
-    document.getElementById('backToPeople').onclick = () => {
-        if (partnerPresenceRef) { partnerPresenceRef.off(); partnerPresenceRef = null; }
-        myTypingRef.set(null);
-        partnerTypingRef2.off();
-        currentChatUser = null;
-        currentScreen = 'people';
-        showScreen('peopleScreen');
-    };
+    document.getElementById('backToPeople').onclick = leaveChat;
 }
 
 function saveToHistory(userId, text, isMe) {
@@ -781,12 +776,24 @@ function addSystemMsg(text) {
 }
 
 // ========== زر الرجوع في المتصفح ==========
+// دالة موحدة للخروج من الدردشة
+function leaveChat() {
+    if (partnerPresenceRef) { partnerPresenceRef.off(); partnerPresenceRef = null; }
+    // تنظيف typing
+    try {
+        if (currentChatUser) {
+            db.ref('typing/' + currentChatUser.id + '/' + myId).set(null);
+            db.ref('typing/' + myId + '/' + currentChatUser.id).off();
+        }
+    } catch(e) {}
+    currentChatUser = null;
+    currentScreen = 'people';
+    showScreen('peopleScreen');
+}
+
 window.addEventListener('popstate', (e) => {
     if (currentScreen === 'chat') {
-        if (partnerPresenceRef) { partnerPresenceRef.off(); partnerPresenceRef = null; }
-        currentChatUser = null;
-        currentScreen = 'people';
-        showScreen('peopleScreen');
+        leaveChat();
     } else if (currentScreen === 'people') {
         history.pushState({ screen: 'people' }, '', '');
     }
@@ -840,3 +847,13 @@ function cleanup() {
 }
 
 window.addEventListener('beforeunload', cleanup);
+
+// كشف تبويب مكرر
+window.addEventListener('storage', function(e) {
+    if (e.key === 'jiranak_active_tab') {
+        // تبويب ثاني فتح — أوقف هذا التبويب
+        cleanup();
+        document.body.innerHTML = '<div style="padding:60px 20px;text-align:center;color:white;font-family:Cairo,sans-serif;direction:rtl"><h2>⚠️ مفتوح في تبويب آخر</h2><p style="color:#7f7f9a;margin-top:12px">أغلق هذا التبويب واستخدم التبويب الآخر</p><button onclick="localStorage.setItem(\'jiranak_active_tab\',Date.now());location.reload()" style="margin-top:24px;padding:12px 32px;border-radius:14px;border:none;background:#6c5ce7;color:white;font-size:16px;font-family:Cairo;cursor:pointer">استخدم هنا بدلاً</button></div>';
+    }
+});
+localStorage.setItem('jiranak_active_tab', Date.now());
