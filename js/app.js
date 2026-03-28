@@ -386,7 +386,6 @@ function startGeoWatch() {
 
 // ========== SCREEN 2: People ==========
 function enterPeopleScreen() {
-    // [FIX 1+2] تنظيف أي listeners و intervals قديمة أولاً
     cleanup();
 
     currentScreen = 'people';
@@ -394,6 +393,9 @@ function enterPeopleScreen() {
     document.getElementById('myName').textContent = myName;
     document.getElementById('onlineCount').textContent = 'جاري الاتصال...';
     history.pushState({ screen: 'people' }, '', '');
+
+    // دائماً نحدّث الموقع بالخلفية لتحسين الدقة
+    startGeoWatch();
 
     presenceRef = db.ref('online');
     myPresenceRef = presenceRef.child(myId);
