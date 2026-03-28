@@ -270,16 +270,24 @@ function startChat(userId, userName, uLat, uLng) {
         if (now - lastMsgTime < 500) return;
         lastMsgTime = now;
 
-        addMsg(text, true);
+        addMsg(text, true, false);
         saveToHistory(userId, text, true);
         input.value = '';
 
-        // إرسال عبر Firebase - فوري
+        // إرسال عبر Firebase
         db.ref('msgs/' + userId).push({
             from: myId,
             name: myName,
             text: text,
             t: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => {
+            // علامة صح بعد الإرسال
+            const allMsgs = document.getElementById('chatMessages').querySelectorAll('.msg-me');
+            const last = allMsgs[allMsgs.length - 1];
+            if (last) {
+                const tick = last.querySelector('.msg-tick');
+                if (tick) tick.textContent = '✓';
+            }
         });
     };
 
@@ -305,13 +313,14 @@ function saveToHistory(userId, text, isMe) {
     chatHistory.get(userId).push({ text, isMe });
 }
 
-function addMsg(text, isMe) {
+function addMsg(text, isMe, delivered = true) {
     const msgs = document.getElementById('chatMessages');
     const div = document.createElement('div');
     const now = new Date();
     const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
     div.className = `msg ${isMe ? 'msg-me' : 'msg-them'}`;
-    div.innerHTML = `${esc(text)}<span class="msg-time">${time}</span>`;
+    const tick = isMe ? `<span class="msg-tick">${delivered ? '✓' : '⏳'}</span>` : '';
+    div.innerHTML = `${esc(text)}<span class="msg-time">${time} ${tick}</span>`;
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
 }
