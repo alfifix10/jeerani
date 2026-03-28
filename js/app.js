@@ -314,8 +314,6 @@ function startChat(userId) {
         document.getElementById('chatMessages').innerHTML = '';
         currentChatUser = null;
         showScreen('peopleScreen');
-        // حذف الرسائل القديمة
-        sb.from('messages').delete().or(`from_id.eq.${myId},to_id.eq.${myId}`).then(() => {});
     };
 }
 
