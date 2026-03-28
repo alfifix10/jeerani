@@ -18,6 +18,7 @@ let presenceChannel = null;
 let nearbyUsers = new Map();
 let unreadFrom = new Set();
 let blockedUsers = new Set(JSON.parse(localStorage.getItem('jiranak_blocked') || '[]'));
+let myOldIds = new Set(JSON.parse(localStorage.getItem('jiranak_old_ids') || '[]'));
 let lastMsgTime = 0;
 
 const AVATARS = ['😎','🦊','🐱','🦁','🐸','🦉','🐼','🐨','🦋','🌸','⚡','🔥','🌙','🎭','👻','🤖','🎯','💎','🌈','🍀'];
@@ -141,6 +142,8 @@ function enterPeopleScreen() {
     document.getElementById('backToLanding').onclick = async () => {
         localStorage.removeItem('jiranak_name');
         await cleanup();
+        myOldIds.add(myId);
+        localStorage.setItem('jiranak_old_ids', JSON.stringify([...myOldIds]));
         myId = crypto.randomUUID();
         localStorage.setItem('jiranak_id', myId);
         showScreen('landingScreen');
@@ -333,7 +336,7 @@ function initSupabase() {
                 nearbyUsers.clear();
                 Object.entries(state).forEach(([key, users]) => {
                     users.forEach(u => {
-                        if (u.id && u.id !== myId) {
+                        if (u.id && u.id !== myId && !myOldIds.has(u.id)) {
                             nearbyUsers.set(u.id, { id: u.id, name: u.name, lat: u.lat, lng: u.lng });
                         }
                     });
@@ -342,7 +345,7 @@ function initSupabase() {
             })
             .on('presence', { event: 'join' }, ({ newPresences }) => {
                 newPresences.forEach(u => {
-                    if (u.id && u.id !== myId) {
+                    if (u.id && u.id !== myId && !myOldIds.has(u.id)) {
                         nearbyUsers.set(u.id, { id: u.id, name: u.name, lat: u.lat, lng: u.lng });
                     }
                 });
