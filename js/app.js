@@ -124,7 +124,12 @@ function initLanding() {
         }
         myName = name;
         localStorage.setItem('jiranak_name', name);
-        requestLocation();
+        // لو عندنا موقع من قبل، ندخل مباشرة
+        if (myLat !== 0 && myLng !== 0) {
+            enterPeopleScreen();
+        } else {
+            requestLocation();
+        }
     };
 
     input.onkeypress = (e) => { if (e.key === 'Enter') joinBtn.click(); };
