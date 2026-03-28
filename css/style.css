@@ -78,12 +78,12 @@ body {
 }
 /* إطار احترافي يجمع كل المحتوى */
 .screen-content > .frame {
-    width: 100%;
-    max-width: 520px;
+    width: calc(100% - 32px);
+    max-width: 480px;
     background: var(--dark-2);
     border: 1px solid var(--glass-border);
-    border-radius: 28px;
-    padding: 48px 32px;
+    border-radius: 24px;
+    padding: 28px 24px 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -145,8 +145,8 @@ body {
 
 /* ========== LANDING SCREEN ========== */
 .logo-big {
-    font-size: 80px;
-    margin-bottom: 8px;
+    font-size: 56px;
+    margin-bottom: 4px;
     animation: bounce 2s ease infinite;
 }
 @keyframes bounce {
@@ -155,29 +155,29 @@ body {
 }
 
 .title {
-    font-size: 52px;
+    font-size: 36px;
     font-weight: 900;
     background: var(--gradient-1);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     letter-spacing: -1px;
 }
 
 .subtitle {
-    font-size: 18px;
+    font-size: 14px;
     color: var(--text-muted);
-    margin-bottom: 28px;
+    margin-bottom: 16px;
     text-align: center;
 }
 
 .features-mini {
     display: flex;
-    gap: 16px;
+    gap: 8px;
     flex-wrap: wrap;
     justify-content: center;
-    margin-bottom: 36px;
+    margin-bottom: 16px;
 }
 .features-mini span {
     padding: 8px 16px;
@@ -192,10 +192,10 @@ body {
 .input-group {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     width: 100%;
-    max-width: 440px;
-    margin-bottom: 20px;
+    max-width: 400px;
+    margin-bottom: 12px;
 }
 .input-group input {
     flex: 1;
@@ -259,7 +259,7 @@ body {
 
 .random-names {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
@@ -288,9 +288,10 @@ body {
 }
 
 .note {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-muted);
     opacity: 0.6;
+    margin-top: 8px;
 }
 
 .searching {
