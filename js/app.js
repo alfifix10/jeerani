@@ -84,7 +84,7 @@ function initLanding() {
         myName = name;
         localStorage.setItem('jiranak_name', name);
         requestLocation();
-    });
+    };
 
     input.onkeypress = (e) => {
         if (e.key === 'Enter') joinBtn.click();
