@@ -135,7 +135,7 @@ body {
 }
 
 /* جوال صغير */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
     .screen-content > .frame {
         border-radius: 18px;
         padding: 20px 16px 16px;
