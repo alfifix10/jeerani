@@ -621,12 +621,8 @@ function startChat(userId, userName, uLat, uLng) {
                 addSystemMsg('غيّر اسمه إلى: ' + data.name);
             }
             // تحديث المسافة
-            if (data.lat && data.lng && myLat !== 0) {
-                var newDist = getDistance(data.lat, data.lng);
-                var m = Math.round(newDist * 1000);
-                distText = m < 50 ? 'قريب جداً' : m < 1000 ? m + ' متر' : newDist.toFixed(1) + ' كم';
-            }
-            statusEl.textContent = '📍 يبعد ' + distText;
+            distText = formatDistance(data.lat, data.lng);
+            statusEl.textContent = '📍 ' + distText;
             statusEl.style.color = '';
             partnerWasOnline = true;
         } else if (partnerWasOnline) {
