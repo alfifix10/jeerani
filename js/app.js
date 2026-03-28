@@ -107,9 +107,9 @@ function requestLocation() {
             enterPeopleScreen();
         },
         (err) => {
-            // إذا رفض الإذن، نستخدم موقع تقريبي (وسط الرياض)
-            myLat = 24.7136 + (Math.random() - 0.5) * 0.05;
-            myLng = 46.6753 + (Math.random() - 0.5) * 0.05;
+            // إذا رفض الإذن، نستخدم موقع ثابت (عشان الجهازين يشوفون بعض)
+            myLat = 24.7136;
+            myLng = 46.6753;
             enterPeopleScreen();
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
@@ -243,40 +243,57 @@ function addSystemMsg(text) {
 
 // ========== Supabase (الاتصال الحقيقي) ==========
 function initSupabase() {
-    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    try {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        document.getElementById('onlineCount').textContent = 'جاري الاتصال...';
 
-    // Presence channel - مشاركة الموقع مع الآخرين
-    presenceChannel = supabaseClient.channel('jiranak-presence', {
-        config: { presence: { key: myId } }
-    });
+        presenceChannel = supabaseClient.channel('jiranak-room');
 
-    presenceChannel
-        .on('presence', { event: 'sync' }, () => {
-            const state = presenceChannel.presenceState();
-            nearbyUsers.clear();
-            Object.values(state).forEach(users => {
-                users.forEach(u => {
-                    if (u.id !== myId) {
-                        const dist = getDistance(u.lat, u.lng);
-                        if (dist <= 5) { // 5 كم نطاق
-                            nearbyUsers.set(u.id, u);
+        presenceChannel
+            .on('presence', { event: 'sync' }, () => {
+                const state = presenceChannel.presenceState();
+                nearbyUsers.clear();
+                Object.entries(state).forEach(([key, users]) => {
+                    users.forEach(u => {
+                        if (u.id && u.id !== myId) {
+                            nearbyUsers.set(u.id, { id: u.id, name: u.name, lat: u.lat, lng: u.lng });
                         }
+                    });
+                });
+                renderPeopleList();
+            })
+            .on('presence', { event: 'join' }, ({ newPresences }) => {
+                newPresences.forEach(u => {
+                    if (u.id && u.id !== myId) {
+                        nearbyUsers.set(u.id, { id: u.id, name: u.name, lat: u.lat, lng: u.lng });
                     }
                 });
-            });
-            renderPeopleList();
-        })
-        .subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') {
-                await presenceChannel.track({
-                    id: myId,
-                    name: myName,
-                    lat: myLat,
-                    lng: myLng,
-                    online_at: new Date().toISOString(),
+                renderPeopleList();
+            })
+            .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+                leftPresences.forEach(u => {
+                    nearbyUsers.delete(u.id);
                 });
-            }
-        });
+                renderPeopleList();
+            })
+            .subscribe(async (status) => {
+                console.log('Supabase status:', status);
+                if (status === 'SUBSCRIBED') {
+                    document.getElementById('onlineCount').textContent = '✅ متصل - في انتظار جيران...';
+                    await presenceChannel.track({
+                        id: myId,
+                        name: myName,
+                        lat: myLat,
+                        lng: myLng,
+                    });
+                } else if (status === 'CHANNEL_ERROR') {
+                    document.getElementById('onlineCount').textContent = '❌ خطأ في الاتصال';
+                }
+            });
+    } catch (e) {
+        console.error('Supabase error:', e);
+        document.getElementById('onlineCount').textContent = '❌ خطأ: ' + e.message;
+    }
 }
 
 function sendViaSupabase(text) {
@@ -285,18 +302,27 @@ function sendViaSupabase(text) {
 
     if (!chatChannel) {
         chatChannel = supabaseClient.channel(`chat-${roomId}`);
-        chatChannel.on('broadcast', { event: 'message' }, (payload) => {
-            if (payload.payload.sender !== myId) {
-                addMsg(payload.payload.text, false);
+        chatChannel.on('broadcast', { event: 'msg' }, ({ payload }) => {
+            if (payload.from !== myId) {
+                addMsg(payload.text, false);
             }
-        }).subscribe();
+        }).subscribe((status) => {
+            console.log('Chat channel:', status);
+            if (status === 'SUBSCRIBED') {
+                chatChannel.send({
+                    type: 'broadcast',
+                    event: 'msg',
+                    payload: { from: myId, text, ts: Date.now() }
+                });
+            }
+        });
+    } else {
+        chatChannel.send({
+            type: 'broadcast',
+            event: 'msg',
+            payload: { from: myId, text, ts: Date.now() }
+        });
     }
-
-    chatChannel.send({
-        type: 'broadcast',
-        event: 'message',
-        payload: { sender: myId, text, timestamp: Date.now() }
-    });
 }
 
 // ========== المساعدات ==========
