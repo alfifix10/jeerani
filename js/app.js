@@ -107,7 +107,6 @@ let partnerPresenceRef = null;
 let currentScreen = 'landing';
 let heartbeatInterval = null;
 let partnerWasOnline = true;
-let blockedUsers = new Set(JSON.parse(localStorage.getItem('jiranak_blocked') || '[]'));
 let typingTimeout = null;
 
 const AVATARS = ['😎','🦊','🐱','🦁','🐸','🦉','🐼','🐨','🦋','🌸','⚡','🔥','🌙','🎭','👻','🤖','🎯','💎','🌈','🍀'];
