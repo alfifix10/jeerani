@@ -538,18 +538,18 @@ body {
 }
 
 .msg-me {
-    align-self: flex-end;
+    align-self: flex-start;
     background: #6c5ce7;
     color: #fff;
-    border-bottom-left-radius: 16px;
-    border-bottom-right-radius: 4px;
-}
-.msg-them {
-    align-self: flex-start;
-    background: var(--dark-4);
-    color: var(--text);
     border-bottom-right-radius: 16px;
     border-bottom-left-radius: 4px;
+}
+.msg-them {
+    align-self: flex-end;
+    background: var(--dark-4);
+    color: var(--text);
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 4px;
 }
 
 .msg-system {
