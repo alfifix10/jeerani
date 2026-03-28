@@ -79,6 +79,8 @@ var myLat = parseFloat(localStorage.getItem('jiranak_lat')) || 0;
 var myLng = parseFloat(localStorage.getItem('jiranak_lng')) || 0;
 var currentChatUser = null;
 var unreadFrom = new Set();
+var myOldIds;
+try { myOldIds = new Set(JSON.parse(localStorage.getItem('jiranak_old_ids') || '[]')); } catch(e) { myOldIds = new Set(); }
 var blockedUsers;
 try { blockedUsers = new Set(JSON.parse(localStorage.getItem('jiranak_blocked') || '[]')); } catch(e) { blockedUsers = new Set(); }
 var lastMsgTime = 0;
@@ -385,6 +387,11 @@ function enterPeopleScreen() {
     presenceRef = db.ref('online');
     myPresenceRef = presenceRef.child(myId);
 
+    // تنظيف هوياتي القديمة من Firebase
+    myOldIds.forEach(function(oldId) {
+        db.ref('online/' + oldId).remove();
+    });
+
     // مراقبة اتصال Firebase — يظهر البانر فقط لو انقطع بعد ما كان متصل
     var wasConnected = false;
     db.ref('.info/connected').on('value', function(snap) {
@@ -522,7 +529,7 @@ function renderPeopleFromData(data) {
 
     const users = [];
     Object.entries(data).forEach(([id, u]) => {
-        if (id !== myId && !blockedUsers.has(id) && u.name) {
+        if (id !== myId && !myOldIds.has(id) && !blockedUsers.has(id) && u.name) {
             users.push({ id, ...u });
         }
     });
