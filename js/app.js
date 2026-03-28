@@ -148,8 +148,20 @@ function enterPeopleScreen() {
     myPresenceRef.set({ name: myName, lat: myLat, lng: myLng, t: firebase.database.ServerValue.TIMESTAMP });
     myPresenceRef.onDisconnect().remove();
 
+    // تحديث الوقت كل دقيقة عشان ما يتحذف الحساب
+    setInterval(() => {
+        if (myPresenceRef) myPresenceRef.update({ t: firebase.database.ServerValue.TIMESTAMP });
+    }, 60000);
+
     presenceRef.on('value', (snap) => {
         const data = snap.val() || {};
+        // تنظيف الحسابات الميتة (أكثر من 3 دقائق بدون تحديث)
+        const now = Date.now();
+        Object.entries(data).forEach(([id, u]) => {
+            if (u.t && now - u.t > 3 * 60 * 1000 && id !== myId) {
+                db.ref('online/' + id).remove();
+            }
+        });
         document.getElementById('onlineCount').textContent = '✅ متصل';
         renderPeopleFromData(data);
     });
