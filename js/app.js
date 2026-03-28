@@ -80,8 +80,7 @@ var blockedUsers = new Set(JSON.parse(localStorage.getItem('jiranak_blocked') ||
 var lastMsgTime = 0;
 var msgsSentInMinute = 0;
 var minuteStart = Date.now();
-let lastMsgTime = 0;
-let chatHistory = loadChatHistory();
+var chatHistory = loadChatHistory();
 
 function loadChatHistory() {
     try {
