@@ -97,25 +97,18 @@ document.addEventListener('DOMContentLoaded', () => {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
 
-    // تسجيل دخول مجهول — مطلوب لـ Security Rules
-    firebase.auth().signInAnonymously().then(() => {
-        const savedName = localStorage.getItem('jiranak_name');
-        if (savedName && myLat !== 0 && myLng !== 0) {
-            myName = savedName;
-            enterPeopleScreen();
-        } else {
-            initLanding();
-        }
-    }).catch(() => {
-        // لو فشل التوثيق، ادخل بدونه
-        const savedName = localStorage.getItem('jiranak_name');
-        if (savedName && myLat !== 0 && myLng !== 0) {
-            myName = savedName;
-            enterPeopleScreen();
-        } else {
-            initLanding();
-        }
-    });
+    // محاولة تسجيل دخول مجهول (اختياري)
+    if (firebase.auth) {
+        firebase.auth().signInAnonymously().catch(() => {});
+    }
+
+    const savedName = localStorage.getItem('jiranak_name');
+    if (savedName && myLat !== 0 && myLng !== 0) {
+        myName = savedName;
+        enterPeopleScreen();
+    } else {
+        initLanding();
+    }
 });
 
 function initParticles() {
