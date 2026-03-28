@@ -398,52 +398,19 @@ function enterPeopleScreen() {
 
     document.getElementById('backToLanding').onclick = () => {
         showModal({
-            title: 'خيارات الخروج',
-            message: 'اختر ما تريد فعله:',
-            buttons: [
-                {
-                    text: '✏️ تغيير الاسم فقط',
-                    cls: 'modal-btn-primary',
-                    action: () => {
-                        showModal({
-                            title: 'تغيير الاسم',
-                            message: 'اكتب اسمك الجديد:',
-                            input: true,
-                            inputValue: myName,
-                            confirmText: 'تغيير',
-                            onConfirm: (val) => {
-                                if (val.length > 0 && val.length <= 20) {
-                                    myName = val;
-                                    localStorage.setItem('jiranak_name', myName);
-                                    document.getElementById('myName').textContent = myName;
-                                    myPresenceRef.update({ name: myName });
-                                }
-                            }
-                        });
-                    }
-                },
-                {
-                    text: '🚪 خروج كامل (هوية جديدة)',
-                    cls: 'modal-btn-danger',
-                    action: () => {
-                        var deletePromise = myPresenceRef ? myPresenceRef.remove() : Promise.resolve();
-                        cleanup();
-                        localStorage.removeItem('jiranak_name');
-                        chatHistory.clear();
-                        localStorage.removeItem('jiranak_history');
-                        myOldIds.add(myId);
-                        localStorage.setItem('jiranak_old_ids', JSON.stringify([...myOldIds]));
-                        myId = generateId();
-                        localStorage.setItem('jiranak_id', myId);
-                        deletePromise.then(function() { initLanding(); }).catch(function() { initLanding(); });
-                    }
-                },
-                {
-                    text: 'إلغاء',
-                    cls: 'modal-btn-cancel',
-                    action: () => {}
+            title: 'تغيير الاسم',
+            message: 'اكتب اسمك الجديد (هويتك ومحادثاتك تبقى):',
+            input: true,
+            inputValue: myName,
+            confirmText: 'تغيير',
+            onConfirm: (val) => {
+                if (val.length > 0 && val.length <= 20) {
+                    myName = val;
+                    localStorage.setItem('jiranak_name', myName);
+                    document.getElementById('myName').textContent = myName;
+                    myPresenceRef.update({ name: myName });
                 }
-            ]
+            }
         });
     };
 
