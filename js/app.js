@@ -304,12 +304,29 @@ function enterPeopleScreen() {
     };
 
     document.getElementById('editNameBtn').onclick = () => {
-        const newName = prompt('اكتب اسمك الجديد:', myName);
+        var newName = prompt('اكتب اسمك الجديد:', myName);
         if (newName && newName.trim().length > 0 && newName.trim().length <= 20) {
             myName = newName.trim();
             localStorage.setItem('jiranak_name', myName);
             document.getElementById('myName').textContent = myName;
             myPresenceRef.update({ name: myName });
+        }
+    };
+
+    // زر إلغاء الحظر
+    var unblockBtn = document.getElementById('unblockBtn');
+    if (blockedUsers.size > 0) {
+        unblockBtn.style.display = 'inline-flex';
+        unblockBtn.textContent = '🔓 إلغاء الحظر (' + blockedUsers.size + ')';
+    } else {
+        unblockBtn.style.display = 'none';
+    }
+    unblockBtn.onclick = () => {
+        if (confirm('إلغاء حظر ' + blockedUsers.size + ' شخص؟')) {
+            blockedUsers.clear();
+            localStorage.setItem('jiranak_blocked', '[]');
+            unblockBtn.style.display = 'none';
+            presenceRef.once('value', function(s) { renderPeopleFromData(s.val() || {}); });
         }
     };
 

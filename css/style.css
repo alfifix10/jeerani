@@ -534,6 +534,21 @@ body {
     color: var(--accent);
     font-weight: 600;
 }
+.unblock-btn {
+    padding: 8px 16px;
+    border-radius: 50px;
+    border: 1px solid rgba(225, 112, 85, 0.3);
+    background: rgba(225, 112, 85, 0.1);
+    color: #e17055;
+    font-family: 'Cairo', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-bottom: 12px;
+}
+.unblock-btn:hover { background: rgba(225, 112, 85, 0.2); }
+
 .block-btn {
     width: 36px;
     height: 36px;
