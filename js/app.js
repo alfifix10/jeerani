@@ -294,15 +294,28 @@ function enterPeopleScreen() {
     });
 
     document.getElementById('backToLanding').onclick = () => {
-        // ننتظر حذف الحساب القديم قبل إنشاء جديد
-        var deletePromise = myPresenceRef ? myPresenceRef.remove() : Promise.resolve();
-        cleanup();
-        localStorage.removeItem('jiranak_name');
-        myOldIds.add(myId);
-        localStorage.setItem('jiranak_old_ids', JSON.stringify([...myOldIds]));
-        myId = generateId();
-        localStorage.setItem('jiranak_id', myId);
-        deletePromise.then(function() { initLanding(); }).catch(function() { initLanding(); });
+        var choice = prompt('1 = تغيير الاسم فقط (تبقى محادثاتك)\n2 = خروج كامل (هوية جديدة)\n\nاختر:');
+        if (choice === '1') {
+            // تغيير الاسم فقط — نفس الهوية
+            var newName = prompt('اكتب اسمك الجديد:', myName);
+            if (newName && newName.trim().length > 0 && newName.trim().length <= 20) {
+                myName = newName.trim();
+                localStorage.setItem('jiranak_name', myName);
+                document.getElementById('myName').textContent = myName;
+                myPresenceRef.update({ name: myName });
+            }
+        } else if (choice === '2') {
+            // خروج كامل — هوية جديدة
+            var deletePromise = myPresenceRef ? myPresenceRef.remove() : Promise.resolve();
+            cleanup();
+            localStorage.removeItem('jiranak_name');
+            chatHistory.clear();
+            myOldIds.add(myId);
+            localStorage.setItem('jiranak_old_ids', JSON.stringify([...myOldIds]));
+            myId = generateId();
+            localStorage.setItem('jiranak_id', myId);
+            deletePromise.then(function() { initLanding(); }).catch(function() { initLanding(); });
+        }
     };
 
     document.getElementById('editNameBtn').onclick = () => {
