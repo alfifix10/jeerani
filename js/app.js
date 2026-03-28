@@ -250,11 +250,16 @@ function setupChatInput(userId) {
         addMsg(text, true);
         input.value = '';
 
-        // إرسال عبر قناة الحضور (نفس القناة اللي تشتغل)
+        // إرسال عبر قناة الحضور
         presenceChannel.send({
             type: 'broadcast',
             event: 'chat-msg',
             payload: { from: myId, to: userId, text, ts: now }
+        }).then(res => {
+            console.log('Send result:', res);
+        }).catch(err => {
+            console.error('Send error:', err);
+            addSystemMsg('❌ فشل الإرسال');
         });
     };
 
@@ -314,9 +319,16 @@ function initSupabase() {
         }
         document.getElementById('onlineCount').textContent = 'جاري الاتصال...';
 
-        presenceChannel = supabaseClient.channel('jiranak-room');
+        presenceChannel = supabaseClient.channel('jiranak-room', {
+            config: {
+                broadcast: { self: false },
+                presence: { key: myId }
+            }
+        });
         presenceChannel
-            .on('broadcast', { event: 'chat-msg' }, ({ payload }) => {
+            .on('broadcast', { event: 'chat-msg' }, (data) => {
+                console.log('Received broadcast:', data);
+                const payload = data.payload || data;
                 // رسالة موجهة لي
                 if (payload.to === myId && payload.from !== myId) {
                     if (currentChatUser && currentChatUser.id === payload.from) {
