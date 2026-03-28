@@ -129,16 +129,8 @@ const GRADIENTS = [
     'linear-gradient(135deg, #a29bfe, #fd79a8)',
 ];
 
-function formatDistance(lat, lng) {
-    if (myLat === 0 || myLng === 0 || !lat || !lng) return 'متصل';
-    var dist = getDistance(lat, lng);
-    if (isNaN(dist) || dist === Infinity) return 'متصل';
-    // وصف بسيط بدل أرقام غير دقيقة
-    if (dist < 0.1) return '🟢 قريب جداً';
-    if (dist < 1) return '🟢 في الجوار';
-    if (dist < 10) return '🟡 في نفس المدينة';
-    if (dist < 100) return '🟠 في نفس المنطقة';
-    return '⚪ بعيد';
+function formatDistance() {
+    return '🟢 متصل الآن';
 }
 
 function getAvatar(id) { return AVATARS[hashCode(id) % AVATARS.length]; }
@@ -552,7 +544,7 @@ function renderPeopleFromData(data) {
                 </div>
                 <div class="person-info">
                     <div class="person-name">${esc(u.name)} ${hasUnread ? '<span class="new-msg-badge">رسالة جديدة</span>' : ''}</div>
-                    <div class="person-distance">📍 ${distText}</div>
+                    <div class="person-distance">${distText}</div>
                 </div>
                 <div class="person-arrow">←</div>
             </div>`;
@@ -575,9 +567,8 @@ function startChat(userId, userName, uLat, uLng) {
     showScreen('chatScreen');
     history.pushState({ screen: 'chat' }, '', '');
 
-    var distText = formatDistance(uLat, uLng);
     document.getElementById('chatWith').textContent = userName;
-    document.getElementById('chatDistance').textContent = '📍 ' + distText;
+    document.getElementById('chatDistance').textContent = '🟢 متصل الآن';
 
     var msgsDiv = document.getElementById('chatMessages');
     msgsDiv.innerHTML = '';
@@ -611,9 +602,7 @@ function startChat(userId, userName, uLat, uLng) {
                 currentChatUser.name = data.name;
                 addSystemMsg('غيّر اسمه إلى: ' + data.name);
             }
-            // تحديث المسافة
-            distText = formatDistance(data.lat, data.lng);
-            statusEl.textContent = '📍 ' + distText;
+            statusEl.textContent = '🟢 متصل الآن';
             statusEl.style.color = '';
             partnerWasOnline = true;
         } else if (partnerWasOnline) {
