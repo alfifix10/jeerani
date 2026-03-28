@@ -15,9 +15,14 @@
     <meta name="theme-color" content="#6c5ce7">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="stylesheet" href="css/style.css?v=19">
+    <link rel="stylesheet" href="css/style.css?v=20">
 </head>
 <body>
+    <!-- بانر عدم الاتصال -->
+    <div id="offlineBanner" class="offline-banner" style="display:none">
+        ⚠️ لا يوجد اتصال بالإنترنت
+    </div>
+
     <!-- Particles -->
     <div id="particles"></div>
 
@@ -97,6 +102,7 @@
             <div id="chatMessages" class="chat-messages">
                 <!-- الرسائل -->
             </div>
+            <button type="button" id="scrollDownBtn" class="scroll-down-btn" style="display:none" onclick="var m=document.getElementById('chatMessages');m.scrollTop=m.scrollHeight;this.style.display='none'">↓ رسائل جديدة</button>
             <div id="typingIndicator" class="typing-indicator" style="display:none">
                 <span></span><span></span><span></span>
                 <small>يكتب...</small>
@@ -121,6 +127,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
-    <script src="js/app.js?v=60"></script>
+    <script src="js/app.js?v=61"></script>
 </body>
 </html>

@@ -882,3 +882,49 @@ body {
     background: var(--dark-3);
     color: var(--text);
 }
+
+/* بانر عدم الاتصال */
+.offline-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: #e17055;
+    color: white;
+    text-align: center;
+    padding: 8px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* زر النزول للرسائل الجديدة */
+.scroll-down-btn {
+    position: absolute;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 16px;
+    border-radius: 50px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-family: 'Cairo', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 30;
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
+    animation: msgIn 0.2s ease;
+}
+
+/* كلمات طويلة بدون مسافات */
+.msg {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}

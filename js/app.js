@@ -325,6 +325,21 @@ function enterPeopleScreen() {
     presenceRef = db.ref('online');
     myPresenceRef = presenceRef.child(myId);
 
+    // مراقبة اتصال Firebase
+    db.ref('.info/connected').on('value', function(snap) {
+        var banner = document.getElementById('offlineBanner');
+        if (banner) {
+            if (snap.val() === true) {
+                banner.style.display = 'none';
+                if (myPresenceRef) {
+                    myPresenceRef.onDisconnect().remove();
+                }
+            } else {
+                banner.style.display = 'flex';
+            }
+        }
+    });
+
     const presenceData = { name: myName, t: firebase.database.ServerValue.TIMESTAMP };
     if (myLat !== 0 && myLng !== 0) {
         presenceData.lat = roundCoord(myLat);
@@ -549,8 +564,15 @@ function startChat(userId, userName, uLat, uLng) {
     document.getElementById('chatWith').textContent = userName;
     document.getElementById('chatDistance').textContent = myLat !== 0 ? `📍 يبعد ${distText}` : `🟢 ${distText}`;
 
-    const msgsDiv = document.getElementById('chatMessages');
+    var msgsDiv = document.getElementById('chatMessages');
     msgsDiv.innerHTML = '';
+    var scrollBtn = document.getElementById('scrollDownBtn');
+    if (scrollBtn) scrollBtn.style.display = 'none';
+    msgsDiv.onscroll = function() {
+        if (msgsDiv.scrollHeight - msgsDiv.scrollTop - msgsDiv.clientHeight < 80) {
+            if (scrollBtn) scrollBtn.style.display = 'none';
+        }
+    };
 
     const prevMsgs = chatHistory.get(userId) || [];
     if (prevMsgs.length > 0) {
@@ -662,18 +684,37 @@ function startChat(userId, userName, uLat, uLng) {
         el.value = '';
         charCounter.style.display = 'none';
         el.focus();
+        // إيقاف "يكتب..." بعد الإرسال
+        db.ref('typing/' + userId + '/' + myId).set(null);
+        clearTimeout(typingTimeout);
+
+        // timeout: لو Firebase ما رد خلال 10 ثواني = فشل
+        var sendTimeout = setTimeout(function() {
+            var msgEl = document.getElementById(thisMsgId);
+            if (msgEl) {
+                var tick = msgEl.querySelector('.msg-tick');
+                if (tick && tick.textContent === '⏳') tick.textContent = '❌';
+            }
+        }, 10000);
 
         db.ref('msgs/' + userId).push({
             from: myId,
             name: myName,
             text: text,
             t: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => {
-            // [FIX 5] علامة ✓ للرسالة الصحيحة بالضبط
-            const msgEl = document.getElementById(thisMsgId);
+        }).then(function() {
+            clearTimeout(sendTimeout);
+            var msgEl = document.getElementById(thisMsgId);
             if (msgEl) {
-                const tick = msgEl.querySelector('.msg-tick');
+                var tick = msgEl.querySelector('.msg-tick');
                 if (tick) tick.textContent = '✓';
+            }
+        }).catch(function() {
+            clearTimeout(sendTimeout);
+            var msgEl = document.getElementById(thisMsgId);
+            if (msgEl) {
+                var tick = msgEl.querySelector('.msg-tick');
+                if (tick) tick.textContent = '❌';
             }
         });
     };
@@ -700,17 +741,34 @@ function saveToHistory(userId, text, isMe) {
     persistChatHistory();
 }
 
+function linkify(text) {
+    var escaped = esc(text);
+    return escaped.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:#81ecec;text-decoration:underline">$1</a>');
+}
+
 function addMsg(text, isMe, delivered = true, msgId = null) {
-    const msgs = document.getElementById('chatMessages');
-    const div = document.createElement('div');
+    var msgs = document.getElementById('chatMessages');
+    var div = document.createElement('div');
     if (msgId) div.id = msgId;
-    const now = new Date();
-    const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    div.className = `msg ${isMe ? 'msg-me' : 'msg-them'}`;
-    const tick = isMe ? `<span class="msg-tick">${delivered ? '✓' : '⏳'}</span>` : '';
-    div.innerHTML = `${esc(text)}<span class="msg-time">${time} ${tick}</span>`;
+    var now = new Date();
+    var time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    div.className = 'msg ' + (isMe ? 'msg-me' : 'msg-them');
+    var tick = isMe ? '<span class="msg-tick">' + (delivered ? '✓' : '⏳') + '</span>' : '';
+    div.innerHTML = linkify(text) + '<span class="msg-time">' + time + ' ' + tick + '</span>';
+
+    // لا تسحب للأسفل إذا المستخدم يقرأ رسائل قديمة
+    var isAtBottom = msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight < 80;
     msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
+    if (isAtBottom || isMe) {
+        msgs.scrollTop = msgs.scrollHeight;
+    } else {
+        showNewMsgButton();
+    }
+}
+
+function showNewMsgButton() {
+    var btn = document.getElementById('scrollDownBtn');
+    if (btn) btn.style.display = 'flex';
 }
 
 function addSystemMsg(text) {
