@@ -5,7 +5,7 @@
 
 // Supabase (مجاني - للدردشة الفورية)
 const SUPABASE_URL = 'https://hocxgsvrosyphgjpsxfh.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_DTNirTBb72VaK7QpVvWjJg_-ROAFR_e';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvY3hnc3Zyb3N5cGhnanBzeGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2Nzk3ODYsImV4cCI6MjA5MDI1NTc4Nn0.2NJmnwxT30IJBxuKrbWB3m_3vNfmPq7YmJs4PSiB0YU';
 
 let supabaseClient = null;
 let myId = crypto.randomUUID();
