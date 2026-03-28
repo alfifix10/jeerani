@@ -213,14 +213,22 @@ function startChat(userId) {
     // الاشتراك في غرفة الدردشة
     const roomId = [myId, userId].sort().join('-');
     if (chatChannel) { chatChannel.unsubscribe(); chatChannel = null; }
-    chatChannel = supabaseClient.channel(`chat-${roomId}`);
+
+    let chatReady = false;
+    chatChannel = supabaseClient.channel(`chat-${roomId}`, {
+        config: { broadcast: { self: false, ack: true } }
+    });
     chatChannel.on('broadcast', { event: 'msg' }, ({ payload }) => {
         if (payload.from !== myId) {
             addMsg(payload.text, false);
-            // اهتزاز خفيف
             if (navigator.vibrate) navigator.vibrate(50);
         }
-    }).subscribe();
+    }).subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+            chatReady = true;
+            console.log('Chat ready:', roomId);
+        }
+    });
 
     // مراقبة خروج الطرف الآخر
     const checkLeave = setInterval(() => {
@@ -230,8 +238,8 @@ function startChat(userId) {
         }
     }, 3000);
 
-    // إعداد الإرسال
-    setupChatInput(userId);
+    // إعداد الإرسال (مع التأكد أن القناة جاهزة)
+    setupChatInput(userId, () => chatReady);
 
     document.getElementById('backToPeople').onclick = () => {
         clearInterval(checkLeave);
@@ -239,11 +247,11 @@ function startChat(userId) {
     };
 }
 
-function setupChatInput(userId) {
+function setupChatInput(userId, isReady) {
     const input = document.getElementById('msgInput');
     const sendBtn = document.getElementById('sendBtn');
 
-    const sendMsg = () => {
+    const sendMsg = async () => {
         const text = input.value.trim();
         if (!text) return;
         if (text.length > 500) {
@@ -251,7 +259,12 @@ function setupChatInput(userId) {
             return;
         }
 
-        // منع السبام (رسالة كل ثانية)
+        if (!isReady()) {
+            addSystemMsg('⏳ جاري الاتصال...');
+            return;
+        }
+
+        // منع السبام
         const now = Date.now();
         if (now - lastMsgTime < 1000) return;
         lastMsgTime = now;
@@ -259,17 +272,21 @@ function setupChatInput(userId) {
         addMsg(text, true);
         input.value = '';
 
-        chatChannel.send({
-            type: 'broadcast',
-            event: 'msg',
-            payload: { from: myId, text, ts: now }
-        });
+        try {
+            await chatChannel.send({
+                type: 'broadcast',
+                event: 'msg',
+                payload: { from: myId, text, ts: now }
+            });
 
-        notifyChannel.send({
-            type: 'broadcast',
-            event: 'notify',
-            payload: { from: myId, to: userId, name: myName }
-        });
+            notifyChannel.send({
+                type: 'broadcast',
+                event: 'notify',
+                payload: { from: myId, to: userId, name: myName }
+            });
+        } catch (e) {
+            addSystemMsg('❌ فشل إرسال الرسالة');
+        }
     };
 
     const newSend = sendBtn.cloneNode(true);
