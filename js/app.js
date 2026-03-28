@@ -75,8 +75,8 @@ function getOrCreateId() {
 
 var myId = getOrCreateId();
 var myName = '';
-var myLat = parseFloat(localStorage.getItem('jiranak_lat')) || 0;
-var myLng = parseFloat(localStorage.getItem('jiranak_lng')) || 0;
+var myLat = 0;
+var myLng = 0;
 var currentChatUser = null;
 var unreadFrom = new Set();
 var myOldIds;
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
         db = firebase.database();
 
         var savedName = localStorage.getItem('jiranak_name');
-        if (savedName && myLat !== 0 && myLng !== 0) {
+        if (savedName) {
             myName = savedName;
             enterPeopleScreen();
         } else {
@@ -310,12 +310,7 @@ function initLanding() {
         }
         myName = name;
         localStorage.setItem('jiranak_name', name);
-        // لو عندنا موقع من قبل، ندخل مباشرة
-        if (myLat !== 0 && myLng !== 0) {
-            enterPeopleScreen();
-        } else {
-            requestLocation();
-        }
+        requestLocation();
     };
 
     input.onkeypress = (e) => { if (e.key === 'Enter') joinBtn.click(); };
@@ -346,8 +341,6 @@ function requestLocation() {
             myLat = pos.coords.latitude;
             myLng = pos.coords.longitude;
             myGpsAccuracy = pos.coords.accuracy || 0;
-            localStorage.setItem('jiranak_lat', myLat);
-            localStorage.setItem('jiranak_lng', myLng);
             enteredFromGeo = true;
             enterPeopleScreen();
             startGeoWatch();
@@ -374,8 +367,6 @@ function startGeoWatch() {
             }
             myLat = newLat;
             myLng = newLng;
-            localStorage.setItem('jiranak_lat', myLat);
-            localStorage.setItem('jiranak_lng', myLng);
             if (myPresenceRef) {
                 myPresenceRef.update({ lat: roundCoord(myLat), lng: roundCoord(myLng) });
             }
