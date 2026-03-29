@@ -340,10 +340,12 @@ function requestLocation() {
         function(pos) {
             var accuracy = pos.coords.accuracy || 99999;
             myGpsAccuracy = accuracy;
-            // نقبل الموقع الأولي حتى لو غير دقيق — watchPosition سيحسّنه
-            myLat = pos.coords.latitude;
-            myLng = pos.coords.longitude;
-            if (accuracy < 200) myGpsReady = true;
+            // نحفظ الإحداثيات فقط لو دقيقة
+            if (accuracy < 200) {
+                myLat = pos.coords.latitude;
+                myLng = pos.coords.longitude;
+                myGpsReady = true;
+            }
             enteredFromGeo = true;
             enterPeopleScreen();
             startGeoWatch();
@@ -353,7 +355,7 @@ function requestLocation() {
             enteredFromGeo = true;
             enterPeopleScreen();
         },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
 }
 
@@ -429,7 +431,11 @@ function enterPeopleScreen() {
     });
 
     var presenceData = { name: myName, t: firebase.database.ServerValue.TIMESTAMP };
-    if (myLat !== 0) { presenceData.lat = myLat; presenceData.lng = myLng; }
+    // لا نحفظ الإحداثيات إلا لما تكون دقيقة (GPS حقيقي)
+    if (myGpsReady && myLat !== 0) {
+        presenceData.lat = myLat;
+        presenceData.lng = myLng;
+    }
     myPresenceRef.set(presenceData);
     myPresenceRef.onDisconnect().remove();
 
