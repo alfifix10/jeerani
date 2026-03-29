@@ -162,9 +162,10 @@ body {
     margin-bottom: 24px;
     text-align: center;
     line-height: 1;
-    letter-spacing: 4px;
+    letter-spacing: 3px;
     direction: ltr;
     color: #fff;
+    font-family: 'Poppins', sans-serif;
 }
 .logo-dot {
     letter-spacing: 0;
