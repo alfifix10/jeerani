@@ -167,9 +167,9 @@ body {
     color: #fff;
 }
 .logo-dot {
-    color: var(--accent);
     font-weight: 600;
     letter-spacing: 0;
+    opacity: 0.5;
 }
 .logo-en {
     display: block;
