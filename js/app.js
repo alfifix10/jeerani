@@ -560,16 +560,11 @@ function renderPeopleFromData(data) {
     allUsers.sort(function(a, b) { return a._dist - b._dist; });
 
     // النظام الذكي التدريجي:
-    // بدل نطاق ثابت، نعرض أقرب N شخص
-    // كل ما كثر المستخدمين، قلّ العدد المعروض تدريجياً
-    // الأبعد يختفي واحد واحد — مو مجموعة فجأة
+    // معادلة سلسة: كل ما زاد مستخدم، ينقص العدد المعروض بشكل تدريجي
+    // maxShow = 20 عند 1 مستخدم، ينزل تدريجياً لـ 8 عند 200+ مستخدم
     var total = allUsers.length;
-    var maxShow;
-    if (total <= 5) maxShow = total;        // قليلين → أعرض الكل
-    else if (total <= 20) maxShow = 15;
-    else if (total <= 50) maxShow = 12;
-    else if (total <= 100) maxShow = 10;
-    else maxShow = 8;
+    var maxShow = Math.max(8, Math.round(20 - (total * 0.06)));
+    if (total <= 5) maxShow = total;
 
     var users;
     if (!myGpsReady) {
