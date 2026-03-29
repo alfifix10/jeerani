@@ -167,10 +167,10 @@ body {
     display: block;
     font-size: 13px;
     font-weight: 600;
-    letter-spacing: 7px;
+    letter-spacing: 14px;
     color: var(--accent);
     margin-top: 6px;
-    text-indent: 7px;
+    text-indent: 14px;
     direction: ltr;
 }
 
