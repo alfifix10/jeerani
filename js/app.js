@@ -381,6 +381,14 @@ function startGeoWatch() {
             if (myPresenceRef) {
                 myPresenceRef.update({ lat: myLat, lng: myLng, acc: Math.round(accuracy) });
             }
+            // تحديث كل المسافات بالقائمة بدون إعادة رسم
+            document.querySelectorAll('.person-card').forEach(function(card) {
+                var lat = parseFloat(card.dataset.ulat);
+                var lng = parseFloat(card.dataset.ulng);
+                var distEl = card.querySelector('.person-distance');
+                if (distEl) distEl.textContent = formatDistance(lat, lng);
+            });
+
             // لو وصلنا لدقة جيدة (< 100م) — نوقف GPS لتوفير البطارية
             if (accuracy < 100 && geoWatchId !== null) {
                 navigator.geolocation.clearWatch(geoWatchId);
@@ -522,8 +530,26 @@ function enterPeopleScreen() {
         scheduleRender();
     });
     presenceRef.on('child_changed', function(snap) {
-        onlineCache[snap.key] = snap.val();
-        // ما نعيد الرسم عند تغيير timestamp فقط
+        var oldData = onlineCache[snap.key];
+        var newData = snap.val();
+        onlineCache[snap.key] = newData;
+
+        // تحديث المسافة بدون إعادة رسم القائمة بالكامل
+        var card = document.querySelector('[data-uid="' + snap.key + '"]');
+        if (card && newData) {
+            // تحديث المسافة
+            var distEl = card.querySelector('.person-distance');
+            if (distEl) distEl.textContent = formatDistance(newData.lat, newData.lng);
+            // تحديث الاسم لو تغيّر
+            if (oldData && oldData.name !== newData.name) {
+                var nameEl = card.querySelector('.person-name');
+                if (nameEl) nameEl.textContent = newData.name;
+                card.dataset.uname = newData.name;
+            }
+            // تحديث الإحداثيات في الـ data attributes
+            if (newData.lat) card.dataset.ulat = newData.lat;
+            if (newData.lng) card.dataset.ulng = newData.lng;
+        }
     });
     presenceRef.on('child_removed', function(snap) {
         delete onlineCache[snap.key];
