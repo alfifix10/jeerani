@@ -339,12 +339,9 @@ function requestLocation() {
         function(pos) {
             var accuracy = pos.coords.accuracy || 99999;
             myGpsAccuracy = accuracy;
-            // نحفظ الإحداثيات فقط لو دقيقة
-            if (accuracy < 200) {
-                myLat = pos.coords.latitude;
-                myLng = pos.coords.longitude;
-                myGpsReady = true;
-            }
+            myLat = pos.coords.latitude;
+            myLng = pos.coords.longitude;
+            myGpsReady = true;
             enteredFromGeo = true;
             enterPeopleScreen();
             startGeoWatch();
@@ -369,7 +366,7 @@ function startGeoWatch() {
             myGpsAccuracy = accuracy;
 
             // نقبل الموقع فقط لو الدقة أقل من 200 متر (GPS حقيقي)
-            if (accuracy > 200) return;
+            if (accuracy > myGpsAccuracy && myGpsAccuracy > 0) return;
 
             // كشف قفزة مريبة
             if (myLat !== 0 && myLng !== 0) {
@@ -614,8 +611,7 @@ function renderPeopleFromData(data) {
         return;
     } else {
         // فلتر: أبعد شخص معروض لازم يكون ضمن 100 كم
-        var nearby = allUsers.filter(function(u) { return u._dist <= 100; });
-        users = nearby.slice(0, maxShow);
+        users = allUsers.slice(0, maxShow);
     }
 
     if (users.length === 0) {
