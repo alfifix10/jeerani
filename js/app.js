@@ -1,6 +1,5 @@
 // ========================================
-// جيرانك - Jiranak
-// دردشة مجهولة مع الجيران (Firebase)
+// Jeerani — Jeerani
 // ========================================
 
 const firebaseConfig = {
@@ -942,12 +941,12 @@ function esc(text) {
 function shareLink() {
     const url = window.location.href;
     if (navigator.share) {
-        navigator.share({ title: 'دردش مع جيرانك', text: 'دردش مع الناس اللي حولك - مجهول ومؤقت!', url });
+        navigator.share({ title: 'Jeerani', text: 'دردش مع الناس اللي حولك - مجهول ومؤقت!', url });
     } else {
         navigator.clipboard.writeText(url).then(() => {
             showModal({
                 title: 'تم النسخ',
-                message: 'تم نسخ الرابط! شاركه مع جيرانك.',
+                message: 'تم نسخ الرابط! شاركه مع أصدقائك.',
                 buttons: [{ text: 'حسناً', cls: 'modal-btn-primary', action: () => {} }]
             });
         });
