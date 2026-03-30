@@ -6,27 +6,22 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Jeerani — دردش مع جيرانك</title>
+    <title>Jeerani</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏘️</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#6c5ce7">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="stylesheet" href="css/style.css?t=20260329v">
+    <link rel="stylesheet" href="css/style.css?t=20260330f">
 </head>
 <body>
-    <!-- بانر عدم الاتصال -->
     <div id="offlineBanner" class="offline-banner" style="display:none">
         ⚠️ لا يوجد اتصال بالإنترنت
     </div>
-
-    <!-- Particles -->
     <div id="particles"></div>
-
-    <!-- Screen 1: Landing -->
     <div id="landingScreen" class="screen active">
         <div class="screen-content">
             <div class="frame">
@@ -46,8 +41,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Screen 2: Nearby People -->
     <div id="peopleScreen" class="screen">
         <div class="topbar">
             <div class="topbar-info">
@@ -56,7 +49,7 @@
                 <span id="onlineCount" class="online-badge">0 جار متصل</span>
                 <div class="pulse-dot"></div>
             </div>
-            <button id="backToLanding" class="back-btn" title="تغيير الاسم والخروج">↩</button>
+            <button id="backToLanding" class="back-btn" title="رجوع">↩</button>
         </div>
         <div class="screen-content people-content">
             <div class="people-frame">
@@ -67,9 +60,7 @@
                     <div class="spinner"></div>
                     <p>جاري البحث عن جيران...</p>
                 </div>
-                <div id="peopleList" class="people-list" style="display:none">
-                    <!-- يتم إضافتها ديناميكياً -->
-                </div>
+                <div id="peopleList" class="people-list" style="display:none"></div>
                 <div id="noPeople" class="no-people" style="display:none">
                     <div class="empty-icon">👀</div>
                     <p>ما فيه أحد متصل الآن</p>
@@ -79,8 +70,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Screen 3: Chat -->
     <div id="chatScreen" class="screen">
         <div class="topbar chat-topbar">
             <button id="backToPeople" class="back-btn">→</button>
@@ -91,9 +80,7 @@
             <button type="button" id="blockBtn" class="block-btn" title="حظر">🚫</button>
         </div>
         <div class="chat-frame">
-            <div id="chatMessages" class="chat-messages">
-                <!-- الرسائل -->
-            </div>
+            <div id="chatMessages" class="chat-messages"></div>
             <button type="button" id="scrollDownBtn" class="scroll-down-btn" style="display:none" onclick="var m=document.getElementById('chatMessages');m.scrollTop=m.scrollHeight;this.style.display='none'">↓ رسائل جديدة</button>
             <div id="typingIndicator" class="typing-indicator" style="display:none">
                 <span></span><span></span><span></span>
@@ -106,8 +93,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Modal -->
     <div id="modalOverlay" class="modal-overlay" style="display:none">
         <div class="modal-card">
             <h3 id="modalTitle" class="modal-title"></h3>
@@ -116,9 +101,8 @@
             <div id="modalButtons" class="modal-buttons"></div>
         </div>
     </div>
-
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
-    <script src="js/app.js?t=20260329n"></script>
+    <script src="js/app.js?t=20260330f"></script>
 </body>
 </html>
