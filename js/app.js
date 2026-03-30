@@ -30,7 +30,7 @@ function getDeviceFingerprint() {
         var ctx = c.getContext('2d');
         ctx.textBaseline = 'top';
         ctx.font = '14px Arial';
-        ctx.fillText('jiranak-fp', 2, 2);
+        ctx.fillText('jeerani-fp', 2, 2);
         parts.push(c.toDataURL().slice(-50));
     } catch(e) {}
     // Hash
@@ -51,15 +51,15 @@ function generateId() {
 // استرجاع الهوية: localStorage أولاً، ثم بصمة الجهاز، ثم إنشاء جديد
 function getOrCreateId() {
     try {
-        var stored = localStorage.getItem('jiranak_id');
+        var stored = localStorage.getItem('jeerani_id');
         if (stored) return stored;
     } catch(e) {}
 
     // لو مسح localStorage، نحاول نسترجع من cookie
     try {
-        var cookieMatch = document.cookie.match(/jiranak_id=([^;]+)/);
+        var cookieMatch = document.cookie.match(/jeerani_id=([^;]+)/);
         if (cookieMatch) {
-            try { localStorage.setItem('jiranak_id', cookieMatch[1]); } catch(e) {}
+            try { localStorage.setItem('jeerani_id', cookieMatch[1]); } catch(e) {}
             return cookieMatch[1];
         }
     } catch(e) {}
@@ -67,8 +67,8 @@ function getOrCreateId() {
     // هوية جديدة مبنية على بصمة الجهاز
     var fp = getDeviceFingerprint();
     var id = fp + '-' + generateId().slice(0, 8);
-    try { localStorage.setItem('jiranak_id', id); } catch(e) {}
-    try { document.cookie = 'jiranak_id=' + id + ';max-age=31536000;path=/;SameSite=Lax'; } catch(e) {}
+    try { localStorage.setItem('jeerani_id', id); } catch(e) {}
+    try { document.cookie = 'jeerani_id=' + id + ';max-age=31536000;path=/;SameSite=Lax'; } catch(e) {}
     return id;
 }
 
@@ -79,9 +79,9 @@ var myLng = 0;
 var currentChatUser = null;
 var unreadFrom = new Set();
 var myOldIds;
-try { myOldIds = new Set(JSON.parse(localStorage.getItem('jiranak_old_ids') || '[]')); } catch(e) { myOldIds = new Set(); }
+try { myOldIds = new Set(JSON.parse(localStorage.getItem('jeerani_old_ids') || '[]')); } catch(e) { myOldIds = new Set(); }
 var blockedUsers;
-try { blockedUsers = new Set(JSON.parse(localStorage.getItem('jiranak_blocked') || '[]')); } catch(e) { blockedUsers = new Set(); }
+try { blockedUsers = new Set(JSON.parse(localStorage.getItem('jeerani_blocked') || '[]')); } catch(e) { blockedUsers = new Set(); }
 var lastMsgTime = 0;
 var myGpsAccuracy = 0;
 var msgsSentInMinute = 0;
@@ -90,13 +90,13 @@ var chatHistory = loadChatHistory();
 
 function loadChatHistory() {
     try {
-        var saved = localStorage.getItem('jiranak_history');
+        var saved = localStorage.getItem('jeerani_history');
         if (saved) {
             var parsed = JSON.parse(saved);
             if (Array.isArray(parsed)) return new Map(parsed);
         }
     } catch(e) {
-        try { localStorage.removeItem('jiranak_history'); } catch(x) {}
+        try { localStorage.removeItem('jeerani_history'); } catch(x) {}
     }
     return new Map();
 }
@@ -104,7 +104,7 @@ function loadChatHistory() {
 function persistChatHistory() {
     try {
         var arr = [...chatHistory.entries()].slice(-20);
-        localStorage.setItem('jiranak_history', JSON.stringify(arr));
+        localStorage.setItem('jeerani_history', JSON.stringify(arr));
     } catch(e) {}
 }
 let presenceRef = null;
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
         firebase.initializeApp(firebaseConfig);
         db = firebase.database();
 
-        var savedName = localStorage.getItem('jiranak_name');
+        var savedName = localStorage.getItem('jeerani_name');
         if (savedName) {
             myName = savedName;
             enterPeopleScreen();
@@ -293,7 +293,7 @@ function initLanding() {
     showScreen('landingScreen');
     const input = document.getElementById('nicknameInput');
     const joinBtn = document.getElementById('joinBtn');
-    var savedName = localStorage.getItem('jiranak_name');
+    var savedName = localStorage.getItem('jeerani_name');
     input.value = savedName || '';
     joinBtn.disabled = false;
     joinBtn.textContent = 'ادخل';
@@ -308,7 +308,7 @@ function initLanding() {
             return;
         }
         myName = name;
-        localStorage.setItem('jiranak_name', name);
+        localStorage.setItem('jeerani_name', name);
         requestLocation();
     };
 
@@ -528,7 +528,7 @@ function enterPeopleScreen() {
 
     document.getElementById('backToLanding').onclick = () => {
         cleanup();
-        localStorage.removeItem('jiranak_name');
+        localStorage.removeItem('jeerani_name');
         initLanding();
     };
 
@@ -542,7 +542,7 @@ function enterPeopleScreen() {
             onConfirm: (val) => {
                 if (val.length > 0 && val.length <= 20) {
                     myName = val;
-                    localStorage.setItem('jiranak_name', myName);
+                    localStorage.setItem('jeerani_name', myName);
                     document.getElementById('myName').textContent = myName;
                     myPresenceRef.update({ name: myName });
                 }
@@ -565,7 +565,7 @@ function enterPeopleScreen() {
             confirmText: 'إلغاء الحظر',
             onConfirm: () => {
                 blockedUsers.clear();
-                localStorage.setItem('jiranak_blocked', '[]');
+                localStorage.setItem('jeerani_blocked', '[]');
                 unblockBtn.style.display = 'none';
                 presenceRef.once('value', function(s) { renderPeopleFromData(s.val() || {}); });
             }
@@ -718,7 +718,7 @@ function startChat(userId, userName, uLat, uLng) {
             confirmText: 'حظر',
             onConfirm: () => {
                 blockedUsers.add(userId);
-                localStorage.setItem('jiranak_blocked', JSON.stringify([...blockedUsers]));
+                localStorage.setItem('jeerani_blocked', JSON.stringify([...blockedUsers]));
                 if (partnerPresenceRef) { partnerPresenceRef.off(); partnerPresenceRef = null; }
                 currentChatUser = null;
                 currentScreen = 'people';
@@ -967,10 +967,10 @@ window.addEventListener('beforeunload', cleanup);
 
 // كشف تبويب مكرر
 window.addEventListener('storage', function(e) {
-    if (e.key === 'jiranak_active_tab') {
+    if (e.key === 'jeerani_active_tab') {
         // تبويب ثاني فتح — أوقف هذا التبويب
         cleanup();
-        document.body.innerHTML = '<div style="padding:60px 20px;text-align:center;color:white;font-family:Cairo,sans-serif;direction:rtl"><h2>⚠️ مفتوح في تبويب آخر</h2><p style="color:#7f7f9a;margin-top:12px">أغلق هذا التبويب واستخدم التبويب الآخر</p><button onclick="localStorage.setItem(\'jiranak_active_tab\',Date.now());location.reload()" style="margin-top:24px;padding:12px 32px;border-radius:14px;border:none;background:#6c5ce7;color:white;font-size:16px;font-family:Cairo;cursor:pointer">استخدم هنا بدلاً</button></div>';
+        document.body.innerHTML = '<div style="padding:60px 20px;text-align:center;color:white;font-family:Cairo,sans-serif;direction:rtl"><h2>⚠️ مفتوح في تبويب آخر</h2><p style="color:#7f7f9a;margin-top:12px">أغلق هذا التبويب واستخدم التبويب الآخر</p><button onclick="localStorage.setItem(\'jeerani_active_tab\',Date.now());location.reload()" style="margin-top:24px;padding:12px 32px;border-radius:14px;border:none;background:#6c5ce7;color:white;font-size:16px;font-family:Cairo;cursor:pointer">استخدم هنا بدلاً</button></div>';
     }
 });
-localStorage.setItem('jiranak_active_tab', Date.now());
+localStorage.setItem('jeerani_active_tab', Date.now());
