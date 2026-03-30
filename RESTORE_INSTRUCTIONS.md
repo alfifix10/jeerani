@@ -1,1 +1,0 @@
-The js/app.js file needs to be restored. Please go to the commit history and revert to the version before the placeholder was uploaded.
