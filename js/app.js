@@ -129,9 +129,9 @@ const GRADIENTS = [
 ];
 
 function formatDistance(lat, lng) {
-    if (!myGpsReady || myLat === 0 || !lat || !lng) return '⏳ جاري تحديد الموقع';
+    if (!myGpsReady || myLat === 0 || !lat || !lng) return '🟢 متصل';
     var dist = getDistance(lat, lng);
-    if (isNaN(dist) || dist === Infinity) return '⏳ جاري تحديد الموقع';
+    if (isNaN(dist) || dist === Infinity) return '🟢 متصل';
     var meters = Math.round(dist * 1000);
     if (meters < 10) return '🟢 بجانبك تقريباً';
     if (meters < 100) return '🟢 ' + meters + ' متر';
