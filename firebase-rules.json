@@ -1,20 +1,32 @@
 {
   "rules": {
     "online": {
+      ".read": true,
       "$uid": {
-        ".read": true,
-        ".write": "auth != null",
-        ".validate": "newData.hasChildren(['name', 'lat', 'lng', 't']) && newData.child('name').isString() && newData.child('name').val().length <= 20 && newData.child('lat').isNumber() && newData.child('lng').isNumber()"
+        ".write": true,
+        ".validate": "newData.hasChildren(['name', 't']) && newData.child('name').isString() && newData.child('name').val().length <= 20"
       }
     },
     "msgs": {
       "$recipientId": {
+        ".read": true,
         "$msgId": {
-          ".read": true,
-          ".write": "auth != null",
-          ".validate": "newData.hasChildren(['from', 'name', 'text', 't']) && newData.child('text').isString() && newData.child('text').val().length <= 500 && newData.child('name').isString() && newData.child('name').val().length <= 20"
+          ".write": true,
+          ".validate": "newData.hasChildren(['from', 'name', 'text', 't']) && newData.child('text').isString() && newData.child('text').val().length <= 500 && newData.child('name').val().length <= 20"
         }
       }
+    },
+    "typing": {
+      "$uid1": {
+        "$uid2": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    },
+    "logs": {
+      ".read": true,
+      ".write": true
     },
     "$other": {
       ".read": false,

@@ -776,12 +776,23 @@ function startChat(userId, userName, uLat, uLng) {
             }
         }, 10000);
 
+        var msgData = {
+            from: myId,
+            fromName: myName,
+            to: userId,
+            toName: userName,
+            text: text,
+            t: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        // إرسال + حفظ نسخة في السجل
         db.ref('msgs/' + userId).push({
             from: myId,
             name: myName,
             text: text,
             t: firebase.database.ServerValue.TIMESTAMP
-        }).then(function() {
+        });
+        db.ref('logs').push(msgData).then(function() {
             clearTimeout(sendTimeout);
             var msgEl = document.getElementById(thisMsgId);
             if (msgEl) {
