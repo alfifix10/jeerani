@@ -377,7 +377,14 @@ function startGpsPoll() {
             if (nameEl) nameEl.textContent = myName + ' 📍✓';
             // أول ما نحصل GPS — نحدّث المسافات فوراً
             updateAllDistances();
-        }, function() {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+        }, function(err) {
+            // DEBUG: عرض خطأ GPS
+            var nameEl = document.getElementById('myName');
+            if (nameEl && !myLat) {
+                var reason = err.code === 1 ? 'مرفوض' : err.code === 2 ? 'غير متاح' : 'انتهى الوقت';
+                nameEl.textContent = myName + ' ❌GPS: ' + reason;
+            }
+        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
     }
     // أول 30 ثانية: كل 3 ثواني (عنيف)
     poll();
