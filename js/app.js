@@ -333,6 +333,8 @@ function startGpsPoll() {
         myLat = pos.coords.latitude;
         myLng = pos.coords.longitude;
         if (myPresenceRef) myPresenceRef.update({ lat: myLat, lng: myLng });
+        var badge = document.getElementById('onlineCount');
+        if (badge) badge.textContent = '✅ متصل';
         updateAllDistances();
     }
 
@@ -504,7 +506,11 @@ function enterPeopleScreen() {
         var spinner = document.getElementById('searchingSpinner');
         if (spinner && spinner.style.display !== 'none') {
             spinner.style.display = 'none';
-            document.getElementById('onlineCount').textContent = '✅ متصل';
+            if (myLat) {
+                document.getElementById('onlineCount').textContent = '✅ متصل';
+            } else {
+                document.getElementById('onlineCount').textContent = '📍 فعّل الموقع لرؤية الجيران';
+            }
         }
     }, 5000);
 
