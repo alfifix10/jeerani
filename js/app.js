@@ -129,11 +129,10 @@ const GRADIENTS = [
 ];
 
 function formatDistance(lat, lng) {
-    // DEBUG: عرض القيم الحقيقية للتشخيص
-    if (myLat === 0) return '📍 موقعك غير محدد';
-    if (lat == null || lng == null || lat === 0) return '📍 موقعه غير محدد';
+    if (typeof myLat !== 'number' || myLat === 0) return '🟢 متصل';
+    if (typeof lat !== 'number' || typeof lng !== 'number' || lat === 0) return '🟢 متصل';
     var dist = getDistance(lat, lng);
-    if (isNaN(dist) || dist === Infinity) return '📍 خطأ حساب';
+    if (isNaN(dist) || dist === Infinity) return '🟢 متصل';
     var meters = Math.round(dist * 1000);
     if (meters < 10) return '🟢 بجانبك تقريباً';
     if (meters < 100) return '🟢 ' + meters + ' متر';
@@ -397,10 +396,11 @@ function startGeoWatch() {
             }
             // تحديث كل المسافات بالقائمة بدون إعادة رسم
             document.querySelectorAll('.person-card').forEach(function(card) {
-                var lat = parseFloat(card.dataset.ulat);
-                var lng = parseFloat(card.dataset.ulng);
+                var uid = card.dataset.uid;
+                var u = onlineCache[uid];
+                if (!u) return;
                 var distEl = card.querySelector('.person-distance');
-                if (distEl) distEl.textContent = formatDistance(lat, lng);
+                if (distEl) distEl.textContent = formatDistance(u.lat, u.lng);
             });
 
             // لو وصلنا لدقة جيدة (< 100م) — نوقف GPS لتوفير البطارية
@@ -467,11 +467,7 @@ function enterPeopleScreen() {
     });
 
     var presenceData = { name: myName, t: firebase.database.ServerValue.TIMESTAMP };
-    // لا نحفظ الإحداثيات إلا لما تكون دقيقة (GPS حقيقي)
-    if (myGpsReady && myLat !== 0) {
-        presenceData.lat = myLat;
-        presenceData.lng = myLng;
-    }
+    if (myLat !== 0) { presenceData.lat = myLat; presenceData.lng = myLng; }
     myPresenceRef.set(presenceData);
     myPresenceRef.onDisconnect().remove();
 
@@ -716,7 +712,7 @@ function renderPeopleFromData(data) {
         var distText = formatDistance(u.lat, u.lng);
         var hasUnread = unreadFrom.has(u.id);
         return `
-            <div class="person-card ${hasUnread ? 'has-unread' : ''}" data-uid="${u.id}" data-uname="${esc(u.name)}" data-ulat="${u.lat || 0}" data-ulng="${u.lng || 0}">
+            <div class="person-card ${hasUnread ? 'has-unread' : ''}" data-uid="${u.id}" data-uname="${esc(u.name)}" data-ulat="${u.lat || ''}" data-ulng="${u.lng || ''}">
                 <div class="person-avatar" style="background:${getGradient(u.id)}">
                     ${getAvatar(u.id)}
                     ${hasUnread ? '<span class="unread-dot"></span>' : ''}
@@ -732,7 +728,7 @@ function renderPeopleFromData(data) {
     // ربط الأحداث بأمان
     list.querySelectorAll('.person-card').forEach(card => {
         card.onclick = () => {
-            startChat(card.dataset.uid, card.dataset.uname, parseFloat(card.dataset.ulat), parseFloat(card.dataset.ulng));
+            startChat(card.dataset.uid, card.dataset.uname, parseFloat(card.dataset.ulat) || 0, parseFloat(card.dataset.ulng) || 0);
         };
     });
 }
