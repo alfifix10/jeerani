@@ -361,6 +361,17 @@ function startGpsPoll() {
     }, 30000);
 }
 
+function cleanStaleUsers(cache) {
+    var now = Date.now();
+    Object.keys(cache).forEach(function(id) {
+        var u = cache[id];
+        if (u && u.t && now - u.t > 60000 && id !== myId) {
+            db.ref('online/' + id).remove();
+            delete cache[id];
+        }
+    });
+}
+
 function updateAllDistances() {
     document.querySelectorAll('.person-card').forEach(function(card) {
         var uid = card.dataset.uid;
@@ -462,16 +473,25 @@ function enterPeopleScreen() {
         document.getElementById('onlineCount').textContent = '✅ متصل';
 
         // تنظيف الحسابات الميتة
-        var now = Date.now();
-        Object.keys(onlineCache).forEach(function(id) {
-            var u = onlineCache[id];
-            if (u && u.t && now - u.t > 3 * 60 * 1000 && id !== myId) {
-                db.ref('online/' + id).remove();
-                delete onlineCache[id];
-            }
-        });
-
+        cleanStaleUsers(onlineCache);
         renderPeopleFromData(onlineCache);
+
+        // تنظيف دوري كل 30 ثانية
+        setInterval(function() {
+            presenceRef.once('value', function(snap) {
+                var data = snap.val() || {};
+                var cleaned = false;
+                var now = Date.now();
+                Object.keys(data).forEach(function(id) {
+                    if (id !== myId && data[id] && data[id].t && now - data[id].t > 60000) {
+                        db.ref('online/' + id).remove();
+                        delete onlineCache[id];
+                        cleaned = true;
+                    }
+                });
+                if (cleaned) renderPeopleFromData(onlineCache);
+            });
+        }, 30000);
 
         // تنظيف السجل — مرة واحدة
         if (!window._logsCleanedUp) {
