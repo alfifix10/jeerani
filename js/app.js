@@ -129,9 +129,7 @@ const GRADIENTS = [
 ];
 
 function formatDistance(lat, lng) {
-    if (!myLat && !lat) return '⏳ جاري تحديد الموقع';
-    if (!myLat) return '⏳ موقعك غير محدد';
-    if (!lat || !lng) return '⏳ ينتظر موقعه';
+    if (!myLat || !lat || !lng) return '🟢 متصل';
     var dist = getDistance(lat, lng);
     if (!dist || isNaN(dist) || dist === Infinity) return '🟢 متصل';
     var m = Math.round(dist * 1000);
