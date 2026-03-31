@@ -371,10 +371,31 @@ function startGpsPoll() {
             myLat = pos.coords.latitude;
             myLng = pos.coords.longitude;
             if (myPresenceRef) myPresenceRef.update({ lat: myLat, lng: myLng });
-        }, function() {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 8000 });
+            // أول ما نحصل GPS — نحدّث المسافات فوراً
+            updateAllDistances();
+        }, function() {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
     }
+    // أول 30 ثانية: كل 3 ثواني (عنيف)
     poll();
-    gpsPollInterval = setInterval(poll, 10000);
+    var fastPoll = setInterval(poll, 3000);
+    setTimeout(function() {
+        clearInterval(fastPoll);
+        // بعدها كل 15 ثانية (هادي)
+        gpsPollInterval = setInterval(poll, 15000);
+    }, 30000);
+}
+
+function updateAllDistances() {
+    document.querySelectorAll('.person-card').forEach(function(card) {
+        var uid = card.dataset.uid;
+        var u = window._onlineCache ? window._onlineCache[uid] : null;
+        if (!u) return;
+        var distEl = card.querySelector('.person-distance');
+        if (distEl) {
+            var d = formatDistance(u.lat, u.lng);
+            if (distEl.textContent !== d) distEl.textContent = d;
+        }
+    });
 }
 
 // ========== SCREEN 2: People ==========
@@ -438,6 +459,7 @@ function enterPeopleScreen() {
 
     // كاش محلي للمتصلين — نحدّث بذكاء بدون إعادة تحميل الكل
     var onlineCache = {};
+    window._onlineCache = onlineCache;
     var renderTimeout = null;
 
     function scheduleRender() {
