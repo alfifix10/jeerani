@@ -485,7 +485,24 @@ function enterPeopleScreen() {
                 startGeoQuery();
             }
         }, 1000);
-        setTimeout(function() { clearInterval(waitGps); }, 20000);
+        setTimeout(function() {
+            clearInterval(waitGps);
+            if (myLat === 0) {
+                // GPS فشل — نعرض كل المتصلين بدون مسافات
+                var spinner = document.getElementById('searchingSpinner');
+                if (spinner) spinner.style.display = 'none';
+                document.getElementById('onlineCount').textContent = '✅ متصل';
+                presenceRef.once('value', function(snap) {
+                    var data = snap.val() || {};
+                    Object.keys(data).forEach(function(id) {
+                        if (id !== myId && data[id] && data[id].name && !blockedUsers.has(id)) {
+                            nearbyUsers[id] = { name: data[id].name, dist: null };
+                        }
+                    });
+                    renderNearbyList();
+                });
+            }
+        }, 15000);
     }
 
     function startGeoQuery() {
