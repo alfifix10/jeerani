@@ -129,9 +129,10 @@ const GRADIENTS = [
 ];
 
 function formatDistance(lat, lng) {
-    if (!myLat || !lat || !lng) return '🟢 متصل';
+    if (!myLat) return '📍 GPS: انتظر...';
+    if (!lat || !lng) return '📍 الآخر: انتظر GPS';
     var dist = getDistance(lat, lng);
-    if (!dist || isNaN(dist) || dist === Infinity) return '🟢 متصل';
+    if (!dist || isNaN(dist) || dist === Infinity) return '⚠️ خطأ حساب';
     var m = Math.round(dist * 1000);
     if (m < 10) return '🟢 بجانبك تقريباً';
     if (m < 100) return '🟢 ' + m + ' متر';
@@ -371,6 +372,9 @@ function startGpsPoll() {
             myLat = pos.coords.latitude;
             myLng = pos.coords.longitude;
             if (myPresenceRef) myPresenceRef.update({ lat: myLat, lng: myLng });
+            // DEBUG: عرض حالة GPS
+            var nameEl = document.getElementById('myName');
+            if (nameEl) nameEl.textContent = myName + ' 📍✓';
             // أول ما نحصل GPS — نحدّث المسافات فوراً
             updateAllDistances();
         }, function() {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
