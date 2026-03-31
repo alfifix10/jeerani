@@ -332,32 +332,30 @@ function requestLocation() {
 var gpsPollInterval = null;
 function startGpsPoll() {
     if (gpsPollInterval || !navigator.geolocation) return;
-    function poll() {
-        navigator.geolocation.getCurrentPosition(function(pos) {
-            myLat = pos.coords.latitude;
-            myLng = pos.coords.longitude;
-            if (myPresenceRef) myPresenceRef.update({ lat: myLat, lng: myLng });
-            // GPS نجح
-            // أول ما نحصل GPS — نحدّث المسافات فوراً
-            updateAllDistances();
-        }, function(err) {
-            if (!myLat && err.code === 1 && !window._gpsModalShown) {
-                window._gpsModalShown = true;
-                var isIOS = /iPhone|iPad/i.test(navigator.userAgent);
-                var steps = isIOS
-                    ? 'الإعدادات ← Safari ← الموقع ← اسمح\nثم ارجع وحدّث الصفحة'
-                    : 'اضغط على 🔒 بجانب الرابط\nاختر "أذونات الموقع" ← سماح\nثم حدّث الصفحة';
-                // الخطة البديلة: IP Geolocation بدون إذن!
-                getLocationByIP();
-            }
-        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
+
+    function onSuccess(pos) {
+        myLat = pos.coords.latitude;
+        myLng = pos.coords.longitude;
+        if (myPresenceRef) myPresenceRef.update({ lat: myLat, lng: myLng });
+        updateAllDistances();
     }
-    // أول 30 ثانية: كل 3 ثواني (عنيف)
+
+    function poll() {
+        // محاولة 1: دقة عالية (timeout 15 ثانية)
+        navigator.geolocation.getCurrentPosition(onSuccess, function(err) {
+            if (err.code === 3 && !myLat) {
+                // TIMEOUT → نحاول بدون دقة عالية
+                navigator.geolocation.getCurrentPosition(onSuccess, function() {},
+                    { enableHighAccuracy: false, maximumAge: 60000, timeout: 30000 });
+            }
+            if (err.code === 1 && !myLat) getLocationByIP();
+        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+    }
+
     poll();
     var fastPoll = setInterval(poll, 3000);
     setTimeout(function() {
         clearInterval(fastPoll);
-        // بعدها كل 15 ثانية (هادي)
         gpsPollInterval = setInterval(poll, 15000);
     }, 30000);
 }
