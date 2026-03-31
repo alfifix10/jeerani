@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار GPS</title>
+    <style>
+        body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; direction: rtl; }
+        .box { background: #222; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .label { color: #888; font-size: 13px; }
+        .value { font-size: 20px; font-weight: bold; margin-top: 4px; }
+        .good { color: #00cec9; }
+        .bad { color: #e17055; }
+        .warn { color: #fdcb6e; }
+        button { padding: 14px 28px; border: none; border-radius: 12px; background: #6c5ce7; color: white; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 12px; }
+        #log { background: #1a1a1a; padding: 12px; border-radius: 8px; font-size: 12px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; direction: ltr; }
+    </style>
+</head>
+<body>
+    <h2>🔍 اختبار GPS</h2>
+    <button onclick="testGPS()">ابدأ الاختبار</button>
+
+    <div class="box">
+        <div class="label">الحالة</div>
+        <div class="value" id="status">لم يبدأ</div>
+    </div>
+    <div class="box">
+        <div class="label">الإحداثيات</div>
+        <div class="value" id="coords">—</div>
+    </div>
+    <div class="box">
+        <div class="label">الدقة</div>
+        <div class="value" id="accuracy">—</div>
+    </div>
+    <div class="box">
+        <div class="label">مصدر الموقع المتوقع</div>
+        <div class="value" id="source">—</div>
+    </div>
+    <div class="box">
+        <div class="label">سجل الأحداث</div>
+        <div id="log"></div>
+    </div>
+
+    <script>
+    function log(msg) {
+        var el = document.getElementById('log');
+        el.textContent += new Date().toLocaleTimeString() + ': ' + msg + '\n';
+        el.scrollTop = el.scrollHeight;
+    }
+
+    function testGPS() {
+        var status = document.getElementById('status');
+        var coords = document.getElementById('coords');
+        var accuracy = document.getElementById('accuracy');
+        var source = document.getElementById('source');
+
+        status.textContent = '⏳ يطلب الإذن...';
+        status.className = 'value warn';
+        log('بدأ الاختبار');
+
+        if (!navigator.geolocation) {
+            status.textContent = '❌ المتصفح لا يدعم GPS';
+            status.className = 'value bad';
+            log('navigator.geolocation غير موجود');
+            return;
+        }
+
+        log('navigator.geolocation موجود ✓');
+
+        // التحقق من حالة الإذن
+        if (navigator.permissions) {
+            navigator.permissions.query({name: 'geolocation'}).then(function(result) {
+                log('حالة الإذن: ' + result.state);
+                if (result.state === 'denied') {
+                    status.textContent = '❌ الموقع مرفوض — لازم تغيّر الإعدادات';
+                    status.className = 'value bad';
+                }
+            }).catch(function(e) {
+                log('خطأ Permissions API: ' + e.message);
+            });
+        }
+
+        // محاولة 1: دقة عالية
+        log('محاولة getCurrentPosition (دقة عالية)...');
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                var lat = pos.coords.latitude;
+                var lng = pos.coords.longitude;
+                var acc = pos.coords.accuracy;
+
+                log('نجح! lat=' + lat + ' lng=' + lng + ' accuracy=' + acc + 'm');
+
+                status.textContent = '✅ GPS يشتغل!';
+                status.className = 'value good';
+                coords.textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
+
+                if (acc < 50) {
+                    accuracy.textContent = acc.toFixed(0) + ' متر (ممتاز - GPS حقيقي)';
+                    accuracy.className = 'value good';
+                    source.textContent = '🛰️ GPS أقمار صناعية';
+                    source.className = 'value good';
+                } else if (acc < 500) {
+                    accuracy.textContent = acc.toFixed(0) + ' متر (جيد - WiFi)';
+                    accuracy.className = 'value good';
+                    source.textContent = '📶 WiFi أو أبراج اتصال';
+                    source.className = 'value warn';
+                } else if (acc < 5000) {
+                    accuracy.textContent = acc.toFixed(0) + ' متر (ضعيف - أبراج)';
+                    accuracy.className = 'value warn';
+                    source.textContent = '📡 أبراج اتصال';
+                    source.className = 'value warn';
+                } else {
+                    accuracy.textContent = (acc/1000).toFixed(1) + ' كم (سيء جداً - IP)';
+                    accuracy.className = 'value bad';
+                    source.textContent = '🌐 IP Address (غير دقيق)';
+                    source.className = 'value bad';
+                }
+
+                // محاولة ثانية بعد 5 ثواني
+                log('ننتظر 5 ثواني لتحسين الدقة...');
+                setTimeout(function() {
+                    navigator.geolocation.getCurrentPosition(function(pos2) {
+                        var acc2 = pos2.coords.accuracy;
+                        log('محاولة ثانية: accuracy=' + acc2 + 'm (كانت ' + acc + 'm)');
+                        if (acc2 < acc) {
+                            accuracy.textContent = acc2.toFixed(0) + ' متر (تحسّنت من ' + acc.toFixed(0) + ')';
+                        }
+                    }, function() {
+                        log('المحاولة الثانية فشلت');
+                    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+                }, 5000);
+            },
+            function(err) {
+                var reasons = {1: 'مرفوض (PERMISSION_DENIED)', 2: 'غير متاح (POSITION_UNAVAILABLE)', 3: 'انتهى الوقت (TIMEOUT)'};
+                log('فشل: ' + reasons[err.code] + ' - ' + err.message);
+
+                status.textContent = '❌ ' + reasons[err.code];
+                status.className = 'value bad';
+
+                if (err.code === 1) {
+                    source.textContent = 'الحل: فعّل الموقع من إعدادات المتصفح';
+                    source.className = 'value bad';
+                } else if (err.code === 3) {
+                    log('نحاول بدون دقة عالية...');
+                    // محاولة بدون enableHighAccuracy
+                    navigator.geolocation.getCurrentPosition(
+                        function(pos) {
+                            log('نجح بدون دقة عالية! accuracy=' + pos.coords.accuracy + 'm');
+                            status.textContent = '✅ GPS يشتغل (دقة منخفضة)';
+                            status.className = 'value warn';
+                            coords.textContent = pos.coords.latitude.toFixed(6) + ', ' + pos.coords.longitude.toFixed(6);
+                            accuracy.textContent = pos.coords.accuracy.toFixed(0) + ' متر';
+                        },
+                        function(err2) {
+                            log('فشل حتى بدون دقة عالية: ' + err2.message);
+                        },
+                        { enableHighAccuracy: false, maximumAge: 60000, timeout: 30000 }
+                    );
+                }
+            },
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+        );
+    }
+    </script>
+</body>
+</html>
