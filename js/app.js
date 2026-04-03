@@ -136,16 +136,31 @@ const GRADIENTS = [
 ];
 
 /** حساب وتنسيق المسافة بين المستخدم الحالي والإحداثيات المعطاة */
-function formatDistance(lat, lng) {
+/** حساب وتنسيق المسافة مع مراعاة دقة GPS للطرفين */
+function formatDistance(lat, lng, theirAcc) {
     if (!myLat || !lat || !lng) return '';
-    let dist = getDistance(lat, lng);
+    const dist = getDistance(lat, lng);
     if (!dist || isNaN(dist) || dist === Infinity) return '';
-    let m = Math.round(dist * 1000);
+    const m = Math.round(dist * 1000);
+    const myAcc = window._myAccuracy || 99999;
+    const otherAcc = theirAcc || 99999;
+    const combinedAcc = myAcc + otherAcc;
+
+    // لو مجموع الدقتين أكبر من المسافة — المسافة غير موثوقة
+    if (combinedAcc > m && m > 100) {
+        if (combinedAcc < 2000) return '🟢 في الجوار';
+        if (combinedAcc < 10000) return '🟡 في نفس المنطقة';
+        return '🟠 قريب';
+    }
+
+    // مسافة دقيقة
     if (m < 10) return '🟢 بجانبك تقريباً';
     if (m < 100) return '🟢 ' + m + ' متر';
     if (m < 1000) return '🟡 ' + m + ' متر';
-    return '🟠 ' + dist.toFixed(1) + ' كم';
+    if (dist < 10) return '🟠 ' + dist.toFixed(1) + ' كم';
+    return '⚪ ' + Math.round(dist) + ' كم';
 }
+
 
 /** اختيار إيموجي أفاتار بناءً على hash الـ ID */
 function getAvatar(id) { return AVATARS[hashCode(id) % AVATARS.length]; }
@@ -351,53 +366,72 @@ function requestLocation() {
 
 // polling GPS كل 10 ثواني — أوثق من watchPosition
 let gpsPollInterval = null;
-/** بدء polling GPS — سريع أول 30 ثانية ثم كل 15 ثانية مع fallback */
+/** نظام GPS احترافي — ينتظر حتى الدقة تتحسن بدل قبول أول قراءة */
 function startGpsPoll() {
-    if (gpsPollInterval || !navigator.geolocation) return;
+    if (window._gpsStarted || !navigator.geolocation) return;
+    window._gpsStarted = true;
+    window._myAccuracy = 99999;
+    let bestAccuracy = 99999;
+    let watchId = null;
 
-    function onSuccess(pos) {
-        myLat = pos.coords.latitude;
-        myLng = pos.coords.longitude;
-        if (myPresenceRef) myPresenceRef.update({ lat: myLat, lng: myLng });
-        let badge = document.getElementById('onlineCount');
-        if (badge) badge.textContent = '✅ متصل';
-        updateAllDistances();
+    function onPosition(pos) {
+        const acc = pos.coords.accuracy;
+        if (acc < bestAccuracy) {
+            bestAccuracy = acc;
+            window._myAccuracy = acc;
+            myLat = pos.coords.latitude;
+            myLng = pos.coords.longitude;
+            if (myPresenceRef) myPresenceRef.update({ lat: myLat, lng: myLng, acc: Math.round(acc) });
+            const badge = document.getElementById('onlineCount');
+            if (badge) {
+                if (acc < 100) badge.textContent = '✅ GPS دقيق';
+                else if (acc < 5000) badge.textContent = '✅ متصل';
+                else badge.textContent = '✅ متصل';
+            }
+            updateAllDistances();
+        }
+        if (acc < 30 && watchId) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+            gpsPollInterval = setInterval(function() {
+                navigator.geolocation.getCurrentPosition(onPosition, function() {},
+                    { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 });
+            }, 30000);
+        }
     }
 
-    function poll() {
-        navigator.geolocation.getCurrentPosition(onSuccess, function(err) {
-            if (err.code === 3 && !myLat) {
-                // TIMEOUT → نحاول بدون دقة عالية
-                navigator.geolocation.getCurrentPosition(onSuccess, function() {},
-                    { enableHighAccuracy: false, maximumAge: 60000, timeout: 30000 });
+    function onError(err) {
+        if (err.code === 1 && !myLat) {
+            getLocationByIP();
+            if (!window._gpsDeniedShown) {
+                window._gpsDeniedShown = true;
+                const isIOS = /iPhone|iPad/i.test(navigator.userAgent);
+                showModal({
+                    title: '📍 المسافات غير دقيقة',
+                    message: isIOS
+                        ? 'لتحسين دقة المسافات:\nالإعدادات ← الخصوصية ← خدمات الموقع ← Safari'
+                        : 'لتحسين دقة المسافات:\nاضغط 🔒 بجانب الرابط ← أذونات الموقع ← سماح',
+                    buttons: [
+                        { text: 'حدّث الصفحة', cls: 'modal-btn-primary', action: function() { location.reload(); } },
+                        { text: 'تخطي', cls: 'modal-btn-cancel', action: function() {} }
+                    ]
+                });
             }
-            if (err.code === 1) {
-                // مرفوض → نحاول IP + نرشد المستخدم
-                if (!myLat) getLocationByIP();
-                if (!window._gpsDeniedShown) {
-                    window._gpsDeniedShown = true;
-                    const isIOS = /iPhone|iPad/i.test(navigator.userAgent);
-                    showModal({
-                        title: '📍 المسافات غير دقيقة',
-                        message: isIOS
-                            ? 'لتحسين دقة المسافات:\n\nالإعدادات ← الخصوصية ← خدمات الموقع ← Safari ← أثناء الاستخدام\n\nثم حدّث الصفحة'
-                            : 'لتحسين دقة المسافات:\n\nاضغط 🔒 بجانب الرابط ← أذونات الموقع ← سماح\n\nثم حدّث الصفحة',
-                        buttons: [
-                            { text: 'حدّث الصفحة', cls: 'modal-btn-primary', action: function() { location.reload(); } },
-                            { text: 'تخطي', cls: 'modal-btn-cancel', action: function() {} }
-                        ]
-                    });
-                }
-            }
-        }, { enableHighAccuracy: true, maximumAge: 0, timeout: GPS_TIMEOUT });
+        }
     }
 
-    poll();
-    let fastPoll = setInterval(poll, GPS_FAST_INTERVAL);
+    watchId = navigator.geolocation.watchPosition(onPosition, onError, {
+        enableHighAccuracy: true, maximumAge: 0, timeout: 60000
+    });
+
     setTimeout(function() {
-        clearInterval(fastPoll);
-        gpsPollInterval = setInterval(poll, GPS_SLOW_INTERVAL);
-    }, GPS_FAST_DURATION);
+        if (bestAccuracy > 1000) {
+            navigator.geolocation.getCurrentPosition(onPosition, function() {},
+                { enableHighAccuracy: false, maximumAge: 30000, timeout: 15000 });
+        }
+    }, 20000);
+
+    window._gpsWatchId = watchId;
 }
 
 /** حذف المستخدمين غير النشطين (أكثر من دقيقة) من Firebase */
@@ -412,29 +446,29 @@ function cleanStaleUsers(cache) {
     });
 }
 
-// خطة بديلة: لو GPS مرفوض — نحصل الموقع من IP (بدون إذن!)
 /** الحصول على الموقع التقريبي من IP كـ fallback لـ GPS */
 function getLocationByIP() {
-    if (myLat) return; // GPS شغّال — ما نحتاج
+    if (myLat && window._myAccuracy < 5000) return;
     fetch('https://ipapi.co/json/')
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.latitude && data.longitude && !myLat) {
+            if (data.latitude && data.longitude && (!myLat || window._myAccuracy > 50000)) {
                 myLat = data.latitude;
                 myLng = data.longitude;
-                if (myPresenceRef) myPresenceRef.update({ lat: myLat, lng: myLng });
+                window._myAccuracy = 50000;
+                if (myPresenceRef) myPresenceRef.update({ lat: myLat, lng: myLng, acc: 50000 });
                 updateAllDistances();
             }
         })
         .catch(function() {
-            // نجرب API ثاني
             fetch('https://ip-api.com/json/?fields=lat,lon')
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
-                    if (data.lat && data.lon && !myLat) {
+                    if (data.lat && data.lon && (!myLat || window._myAccuracy > 50000)) {
                         myLat = data.lat;
                         myLng = data.lon;
-                        if (myPresenceRef) myPresenceRef.update({ lat: myLat, lng: myLng });
+                        window._myAccuracy = 50000;
+                        if (myPresenceRef) myPresenceRef.update({ lat: myLat, lng: myLng, acc: 50000 });
                         updateAllDistances();
                     }
                 }).catch(function() {});
@@ -444,12 +478,12 @@ function getLocationByIP() {
 /** تحديث نص المسافة لكل المستخدمين المعروضين بالقائمة */
 function updateAllDistances() {
     document.querySelectorAll('.person-card').forEach(function(card) {
-        let uid = card.dataset.uid;
-        let u = window._onlineCache ? window._onlineCache[uid] : null;
+        const uid = card.dataset.uid;
+        const u = window._onlineCache ? window._onlineCache[uid] : null;
         if (!u) return;
-        let distEl = card.querySelector('.person-distance');
+        const distEl = card.querySelector('.person-distance');
         if (distEl) {
-            let d = formatDistance(u.lat, u.lng);
+            const d = formatDistance(u.lat, u.lng, u.acc);
             if (distEl.textContent !== d) distEl.textContent = d;
         }
     });
@@ -515,7 +549,7 @@ function enterPeopleScreen() {
     heartbeatInterval = setInterval(() => {
         if (myPresenceRef) {
             let hb = { t: firebase.database.ServerValue.TIMESTAMP };
-            if (myLat) { hb.lat = myLat; hb.lng = myLng; }
+            if (myLat) { hb.lat = myLat; hb.lng = myLng; hb.acc = Math.round(window._myAccuracy || 99999); }
             myPresenceRef.update(hb);
         }
     }, HEARTBEAT_MS);
@@ -640,7 +674,7 @@ function enterPeopleScreen() {
             // نحدّث المسافة بس لو فيه إحداثيات
             if (newData.lat && newData.lng) {
                 let distEl = card.querySelector('.person-distance');
-                if (distEl) distEl.textContent = formatDistance(newData.lat, newData.lng);
+                if (distEl) distEl.textContent = formatDistance(newData.lat, newData.lng, newData.acc);
             }
             if (oldData.name && newData.name && oldData.name !== newData.name) {
                 let nameEl = card.querySelector('.person-name');
@@ -804,7 +838,7 @@ function renderPeopleFromData(data) {
     noPeople.style.display = 'none';
 
     list.innerHTML = users.map((u, i) => {
-        let distText = formatDistance(u.lat, u.lng);
+        let distText = formatDistance(u.lat, u.lng, u.acc);
         let hasUnread = unreadFrom.has(u.id);
         return `
             <div class="person-card ${hasUnread ? 'has-unread' : ''}" data-uid="${u.id}" data-uname="${esc(u.name)}" data-ulat="${u.lat || ''}" data-ulng="${u.lng || ''}">
@@ -1123,6 +1157,8 @@ function cleanup() {
     db.ref('msgs/' + myId).off();
     if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
     if (gpsPollInterval) { clearInterval(gpsPollInterval); gpsPollInterval = null; }
+    if (window._gpsWatchId) { navigator.geolocation.clearWatch(window._gpsWatchId); window._gpsWatchId = null; }
+    window._gpsStarted = false;
     _intervals.forEach(clearInterval); _intervals.length = 0;
     unreadFrom.clear();
     currentChatUser = null;
