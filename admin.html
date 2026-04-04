@@ -186,7 +186,8 @@ function toggleLive() {
 }
 
 function loadAll() {
-    db.ref('online').once('value', function(snap) {
+    // المتصلين — تحديث لحظي تلقائي
+    db.ref('online').on('value', function(snap) {
         var data = snap.val() || {};
         var users = Object.entries(data);
         document.getElementById('sOnline').textContent = users.length;
