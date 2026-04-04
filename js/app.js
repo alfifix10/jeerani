@@ -307,9 +307,20 @@ function initLanding() {
             setTimeout(() => input.style.borderColor = '', 1500);
             return;
         }
-        myName = name;
-        localStorage.setItem('jiranak_name', name);
-        requestLocation();
+        // التحقق من الحظر قبل الدخول
+        joinBtn.textContent = '⏳ انتظر...';
+        joinBtn.disabled = true;
+        db.ref('banned/' + myId).once('value', function(snap) {
+            if (snap.exists()) {
+                joinBtn.textContent = 'ادخل';
+                joinBtn.disabled = false;
+                showBannedMessage();
+                return;
+            }
+            myName = name;
+            localStorage.setItem('jiranak_name', name);
+            requestLocation();
+        });
     };
 
     input.onkeypress = (e) => { if (e.key === 'Enter') joinBtn.click(); };
@@ -395,6 +406,20 @@ function startGeoWatch() {
     );
 }
 
+function showBannedMessage() {
+    // عرض رسالة حظر للمستخدم
+    var overlay = document.createElement('div');
+    overlay.id = 'banOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;';
+    overlay.innerHTML = '<div style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:40px 30px;text-align:center;max-width:340px;width:100%">'
+        + '<div style="font-size:50px;margin-bottom:12px">🚫</div>'
+        + '<div style="font-size:18px;font-weight:700;color:#e17055;margin-bottom:8px">تم حظرك</div>'
+        + '<div style="font-size:13px;color:#7f7f9a">تم حظرك من قبل الإدارة. لا يمكنك استخدام الدردشة حالياً.</div>'
+        + '</div>';
+    document.body.appendChild(overlay);
+    setTimeout(function() { var el = document.getElementById('banOverlay'); if (el) el.remove(); }, 5000);
+}
+
 // ========== SCREEN 2: People ==========
 function enterPeopleScreen() {
     cleanup();
@@ -404,6 +429,16 @@ function enterPeopleScreen() {
     document.getElementById('myName').textContent = myName;
     document.getElementById('onlineCount').textContent = 'جاري الاتصال...';
     history.pushState({ screen: 'people' }, '', '');
+
+    // مراقبة الحظر أثناء الاستخدام — لو حظره الأدمن يطلع فوراً
+    db.ref('banned/' + myId).on('value', function(snap) {
+        if (snap.exists()) {
+            db.ref('banned/' + myId).off();
+            cleanup();
+            showBannedMessage();
+            setTimeout(function() { showScreen('welcomeScreen'); }, 5000);
+        }
+    });
 
     // تحديث الموقع بالخلفية
     startGeoWatch();
