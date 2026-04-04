@@ -184,17 +184,16 @@ function highlightText(text, query) {
 }
 
 function load() {
-    // المتصلين (لتحديد من أونلاين)
+    // المتصلين (لتحديد من أونلاين + أسماءهم)
     db.ref('online').on('value', snap => {
         const data = snap.val() || {};
         onlineIds = new Set(Object.keys(data));
+        // إضافة المتصلين لقائمة المستخدمين
+        Object.entries(data).forEach(([id, u]) => {
+            if (!allUsers[id]) allUsers[id] = { name: u.name, firstSeen: u.t, lastSeen: u.t };
+            else { allUsers[id].name = u.name; allUsers[id].lastSeen = u.t; }
+        });
         document.getElementById('sOn').textContent = onlineIds.size;
-        renderUsers();
-    });
-
-    // جميع المستخدمين
-    db.ref('users').on('value', snap => {
-        allUsers = snap.val() || {};
         document.getElementById('sAll').textContent = Object.keys(allUsers).length;
         renderUsers();
     });
@@ -217,15 +216,26 @@ function load() {
         document.getElementById('p-banned').innerHTML = h;
     });
 
-    // المحادثات
-    db.ref('logs').orderByChild('t').limitToLast(500).once('value', snap => {
+    // المحادثات — واستخراج المستخدمين من السجل
+    db.ref('logs').orderByChild('t').limitToLast(2000).once('value', snap => {
         const data = snap.val() || {};
         logs = Object.values(data).sort((a, b) => (b.t||0) - (a.t||0));
-        document.getElementById('sCo').textContent = '...';
 
         convs = {};
         logs.forEach(m => {
             if (!m.from || !m.to) return;
+            // استخراج المستخدمين من الرسائل
+            [['from','fromName'],['to','toName']].forEach(([idKey, nameKey]) => {
+                const uid = m[idKey], name = m[nameKey];
+                if (!uid || uid === 'admin') return;
+                if (!allUsers[uid]) allUsers[uid] = { name: name, firstSeen: m.t, lastSeen: m.t };
+                else {
+                    if (name) allUsers[uid].name = name;
+                    if (m.t < allUsers[uid].firstSeen) allUsers[uid].firstSeen = m.t;
+                    if (m.t > allUsers[uid].lastSeen) allUsers[uid].lastSeen = m.t;
+                }
+            });
+
             const pair = [m.from, m.to].sort().join('_');
             if (!convs[pair]) convs[pair] = { users:{}, msgs:[], lastTime:0, lastText:'' };
             convs[pair].users[m.from] = m.fromName;
@@ -233,6 +243,8 @@ function load() {
             convs[pair].msgs.push(m);
             if ((m.t||0) > convs[pair].lastTime) { convs[pair].lastTime = m.t; convs[pair].lastText = m.text; }
         });
+        document.getElementById('sAll').textContent = Object.keys(allUsers).length;
+        renderUsers();
         renderConvs();
     });
 }
@@ -256,11 +268,10 @@ function renderUsers() {
         entries.forEach(([id, u]) => {
             const isOn = onlineIds.has(id);
             const dotColor = isOn ? 'var(--a)' : '#555';
-            const statusText = isOn ? 'متصل الآن' : 'آخر ظهور: ' + fmtFull(u.lastSeen);
+            const statusText = isOn ? 'متصل الآن' : fmtFull(u.lastSeen);
             h += '<div class="item"><div><span class="name">' + esc(u.name||'—') + '</span>';
             h += '<span style="width:7px;height:7px;background:' + dotColor + ';border-radius:50%;display:inline-block;margin-right:5px"></span>';
             h += '<div class="id">' + id.slice(0,14) + ' · ' + statusText + '</div>';
-            if (u.firstSeen) h += '<div style="font-size:8px;color:var(--m)">أول دخول: ' + fmtFull(u.firstSeen) + '</div>';
             h += '</div>';
             h += '<button class="btn" style="font-size:10px;padding:2px 6px;color:var(--r);border-color:var(--r)" data-uid="' + id + '" data-name="' + esc(u.name||'') + '" onclick="banUser(this.dataset.uid,this.dataset.name)">🚫</button></div>';
         });
