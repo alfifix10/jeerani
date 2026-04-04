@@ -921,6 +921,11 @@ function startChat(userId, userName, uLat, uLng) {
             onConfirm: () => {
                 blockedUsers.add(userId);
                 localStorage.setItem('jeerani_blocked', JSON.stringify([...blockedUsers]));
+                // إبلاغ الطرف الثاني بالحظر
+                db.ref('msgs/' + userId).push({
+                    from: myId, name: '🚫', text: '🚫 تم حظرك — لن تصل رسائلك بعد الآن',
+                    t: firebase.database.ServerValue.TIMESTAMP, system: true
+                });
                 if (partnerPresenceRef) { partnerPresenceRef.off(); partnerPresenceRef = null; }
                 currentChatUser = null;
                 currentScreen = 'people';
