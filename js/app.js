@@ -1051,7 +1051,10 @@ function addMsg(text, isMe, delivered = true, msgId = null) {
     let div = document.createElement('div');
     if (msgId) div.id = msgId;
     let now = new Date();
-    let time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    let h = now.getHours();
+    let ampm = h >= 12 ? 'م' : 'ص';
+    h = h % 12 || 12;
+    let time = h + ':' + now.getMinutes().toString().padStart(2,'0') + ' ' + ampm;
     div.className = 'msg ' + (isMe ? 'msg-me' : 'msg-them');
     let tick = isMe ? '<span class="msg-tick">' + (delivered ? '✓' : '⏳') + '</span>' : '';
     div.innerHTML = esc(text) + '<span class="msg-time">' + time + ' ' + tick + '</span>';
