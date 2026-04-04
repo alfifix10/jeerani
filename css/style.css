@@ -159,7 +159,7 @@ body {
 .logo-img {
     width: min(40vw, 180px);
     height: auto;
-    margin-bottom: 2px;
+    margin-bottom: -10px;
 }
 .logo-text {
     font-size: 32px;
