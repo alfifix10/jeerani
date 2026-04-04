@@ -173,6 +173,7 @@ function toggleLive() {
                 if (!allUsers[uid]) allUsers[uid] = { name: name, firstSeen: m.t, lastSeen: m.t };
                 else { if (name) allUsers[uid].name = name; if (m.t > allUsers[uid].lastSeen) allUsers[uid].lastSeen = m.t; }
             });
+            if (m.from === m.to) { renderUsers(); return; }
             const pair = [m.from, m.to].sort().join('_');
             if (!convs[pair]) convs[pair] = { users:{}, msgs:[], lastTime:0, lastText:'' };
             convs[pair].users[m.from] = m.fromName;
@@ -287,6 +288,7 @@ function loadLogs() {
         convs = {};
         logs.forEach(m => {
             if (!m.from || !m.to) return;
+            // استخراج المستخدمين (أسماءهم) من كل رسالة
             [['from','fromName'],['to','toName']].forEach(([idKey, nameKey]) => {
                 const uid = m[idKey], name = m[nameKey];
                 if (!uid || uid === 'admin') return;
@@ -301,6 +303,8 @@ function loadLogs() {
                 }
             });
 
+            // تخطي رسائل الدخول (from === to) من المحادثات
+            if (m.from === m.to) return;
             const pair = [m.from, m.to].sort().join('_');
             if (!convs[pair]) convs[pair] = { users:{}, msgs:[], lastTime:0, lastText:'' };
             convs[pair].users[m.from] = m.fromName;

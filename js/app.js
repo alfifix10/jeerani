@@ -509,6 +509,14 @@ function enterPeopleScreen() {
     myPresenceRef.set(presenceData);
     myPresenceRef.onDisconnect().remove();
 
+    // تسجيل دخول المستخدم في السجل — يحفظ الاسم حتى بعد الخروج
+    db.ref('logs').push({
+        from: myId, fromName: myName,
+        to: myId, toName: myName,
+        text: '📌 انضم للدردشة',
+        t: firebase.database.ServerValue.TIMESTAMP
+    });
+
     // [FIX 2] heartbeat واحد فقط
     heartbeatInterval = setInterval(() => {
         if (myPresenceRef) myPresenceRef.update({ t: firebase.database.ServerValue.TIMESTAMP });
