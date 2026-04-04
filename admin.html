@@ -106,7 +106,12 @@
 // تشفير كلمة المرور بدل حفظها كنص واضح
 function hashPass(s) { let h=0; for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h=h&h;} return 'ah-'+Math.abs(h).toString(36); }
 const PASS_HASH = hashPass('Mm123');
-let logs = [], convs = {}, totalConvs = 0, live = false, liveRef = null, searchQuery = '', chatHighlights = [], allUsers = {}, onlineIds = new Set(), listenersReady = false, logsLoaded = false, searchTimer = null;
+let logs = [], convs = {}, totalConvs = 0, live = false, liveRef = null, searchQuery = '', chatHighlights = [], onlineIds = new Set(), listenersReady = false, logsLoaded = false, searchTimer = null;
+
+// تحميل المستخدمين المحفوظين من localStorage
+let allUsers = {};
+try { const saved = localStorage.getItem('jeerani_users'); if (saved) allUsers = JSON.parse(saved); } catch(e) {}
+function saveUsers() { try { localStorage.setItem('jeerani_users', JSON.stringify(allUsers)); } catch(e) {} }
 
 firebase.initializeApp({
     apiKey: "AIzaSyBxr265lCyx0GJw02oE9GQev8kBQRgiTZw",
@@ -255,6 +260,7 @@ function initListeners() {
         });
         document.getElementById('sOn').textContent = onlineIds.size;
         document.getElementById('sAll').textContent = Object.keys(allUsers).length;
+        saveUsers();
         renderUsers();
     });
 
@@ -315,6 +321,7 @@ function loadLogs() {
         logsLoaded = true;
         totalConvs = Object.keys(convs).length;
         document.getElementById('sAll').textContent = Object.keys(allUsers).length;
+        saveUsers();
         renderUsers();
         renderConvs();
     });
