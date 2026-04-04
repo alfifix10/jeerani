@@ -156,6 +156,11 @@ body {
 }
 
 /* ========== LANDING SCREEN ========== */
+.logo-img {
+    width: 90px;
+    height: 90px;
+    margin-bottom: 8px;
+}
 .logo-text {
     font-size: 32px;
     font-weight: 900;
