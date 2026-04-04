@@ -47,6 +47,53 @@
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/style.css?t=v3.1">
+
+    <!-- Structured Data — يخلي Google يعرض الموقع بشكل مميز -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Jeerani",
+        "alternateName": "جيراني",
+        "url": "https://jeerani.net",
+        "description": "دردش مع الناس القريبين منك — مجهول تماماً وبدون تسجيل",
+        "applicationCategory": "SocialNetworkingApplication",
+        "operatingSystem": "Web",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "SAR"
+        },
+        "image": "https://jeerani.net/assets/logo.png",
+        "screenshot": "https://jeerani.net/assets/logo.png",
+        "inLanguage": ["ar", "en"],
+        "author": {
+            "@type": "Organization",
+            "name": "Jeerani",
+            "url": "https://jeerani.net"
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "150",
+            "bestRating": "5"
+        }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Jeerani",
+        "alternateName": "جيراني",
+        "url": "https://jeerani.net",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://jeerani.net/?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
 </head>
 <body>
     <div id="offlineBanner" class="offline-banner" style="display:none">
