@@ -1,17 +1,18 @@
 {
-  "name": "Jeerani",
+  "name": "Jeerani — دردش مع جيرانك",
   "short_name": "Jeerani",
   "description": "دردش مع اللي حولك — مجهول ومؤقت",
-  "start_url": "/jeerani/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0f",
   "theme_color": "#6c5ce7",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "assets/logo.png",
+      "sizes": "480x600",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
