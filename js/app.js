@@ -265,8 +265,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         var savedName = localStorage.getItem('jiranak_name');
         if (savedName) {
-            myName = savedName;
-            enterPeopleScreen();
+            // التحقق من الحظر قبل الدخول التلقائي
+            db.ref('banned/' + myId).once('value', function(snap) {
+                if (snap.exists()) {
+                    localStorage.removeItem('jiranak_name');
+                    initLanding();
+                    showBannedMessage();
+                } else {
+                    myName = savedName;
+                    enterPeopleScreen();
+                }
+            });
         } else {
             initLanding();
         }
@@ -407,7 +416,8 @@ function startGeoWatch() {
 }
 
 function showBannedMessage() {
-    // عرض رسالة حظر للمستخدم
+    // منع التكرار
+    if (document.getElementById('banOverlay')) return;
     var overlay = document.createElement('div');
     overlay.id = 'banOverlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;';
@@ -995,6 +1005,8 @@ function cleanup() {
     if (msgListener) { db.ref('msgs/' + myId).off(); msgListener = null; }
     if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
     if (geoWatchId !== null) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
+    // تنظيف مراقبة الحظر
+    try { db.ref('banned/' + myId).off(); } catch(e) {}
     unreadFrom.clear();
     currentChatUser = null;
 }
