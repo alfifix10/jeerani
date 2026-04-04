@@ -24,6 +24,12 @@
         }
       }
     },
+    "banned": {
+      ".read": true,
+      "$uid": {
+        ".write": true
+      }
+    },
     "logs": {
       ".read": true,
       "$msgId": {
