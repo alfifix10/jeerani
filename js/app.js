@@ -280,7 +280,12 @@ document.addEventListener('DOMContentLoaded', () => {
             initLanding();
         }
     } catch (e) {
-        document.body.innerHTML = '<div style="padding:40px;text-align:center;color:white;font-family:sans-serif;direction:rtl"><h2>حدث خطأ</h2><p>' + e.message + '</p><button onclick="localStorage.clear();location.reload()" style="padding:12px 24px;font-size:16px;margin-top:20px;border-radius:12px;border:none;background:#6c5ce7;color:white;cursor:pointer">إعادة تشغيل</button></div>';
+        var errDiv = document.createElement('div');
+        errDiv.style.cssText = 'padding:40px;text-align:center;color:white;font-family:sans-serif;direction:rtl';
+        errDiv.innerHTML = '<h2>حدث خطأ</h2><p id="errMsg"></p><button onclick="localStorage.clear();location.reload()" style="padding:12px 24px;font-size:16px;margin-top:20px;border-radius:12px;border:none;background:#6c5ce7;color:white;cursor:pointer">إعادة تشغيل</button>';
+        document.body.innerHTML = '';
+        document.body.appendChild(errDiv);
+        document.getElementById('errMsg').textContent = e.message;
     }
 });
 
@@ -446,7 +451,7 @@ function enterPeopleScreen() {
             db.ref('banned/' + myId).off();
             cleanup();
             showBannedMessage();
-            setTimeout(function() { showScreen('welcomeScreen'); }, 5000);
+            setTimeout(function() { showScreen('landingScreen'); }, 5000);
         }
     });
 
@@ -498,51 +503,38 @@ function enterPeopleScreen() {
         if (myPresenceRef) myPresenceRef.update({ t: firebase.database.ServerValue.TIMESTAMP });
     }, 60000);
 
-    presenceRef.on('value', (snap) => {
-        const data = snap.val() || {};
-        // تنظيف الحسابات الميتة (أكثر من 3 دقائق)
-        const now = Date.now();
-        Object.entries(data).forEach(([id, u]) => {
-            if (u.t && now - u.t > 3 * 60 * 1000 && id !== myId) {
-                db.ref('online/' + id).remove();
-            }
-        });
+    // بناء قائمة المتصلين بـ child events بدل value (أداء أفضل)
+    var onlineData = {};
+    var initialLoadDone = false;
+    var renderTimer = null;
 
-        // تنظيف ذكي للسجل — مرة واحدة عند الدخول
-        if (!window._logsCleanedUp) {
-            window._logsCleanedUp = true;
-            var monthAgo = now - (30 * 24 * 60 * 60 * 1000);
-            db.ref('logs').once('value', function(s) {
-                var data = s.val() || {};
-                // تجميع بالمحادثة
-                var convs = {};
-                Object.entries(data).forEach(function(entry) {
-                    var key = entry[0], m = entry[1];
-                    var pair = [m.from, m.to].sort().join('_');
-                    if (!convs[pair]) convs[pair] = [];
-                    convs[pair].push({ key: key, t: m.t || 0 });
-                });
-                // لكل محادثة: احتفظ بآخر 50، احذف الباقي
-                // محادثات ميتة (30 يوم): احذف بالكامل
-                Object.values(convs).forEach(function(msgs) {
-                    msgs.sort(function(a, b) { return b.t - a.t; });
-                    var lastTime = msgs[0] ? msgs[0].t : 0;
-                    if (now - lastTime > monthAgo) {
-                        // محادثة ميتة — احذف الكل
-                        msgs.forEach(function(m) { db.ref('logs/' + m.key).remove(); });
-                    } else if (msgs.length > 50) {
-                        // احتفظ بآخر 50 فقط
-                        msgs.slice(50).forEach(function(m) { db.ref('logs/' + m.key).remove(); });
-                    }
-                });
-            });
-        }
+    function debouncedRender() {
+        if (renderTimer) clearTimeout(renderTimer);
+        renderTimer = setTimeout(function() {
+            var spinner = document.getElementById('searchingSpinner');
+            if (spinner) spinner.style.display = 'none';
+            document.getElementById('onlineCount').textContent = '✅ متصل';
+            renderPeopleFromData(onlineData);
+        }, 300);
+    }
 
-        // إخفاء spinner البحث
-        var spinner = document.getElementById('searchingSpinner');
-        if (spinner) spinner.style.display = 'none';
-        document.getElementById('onlineCount').textContent = '✅ متصل';
-        renderPeopleFromData(data);
+    presenceRef.once('value', function(snap) {
+        onlineData = snap.val() || {};
+        initialLoadDone = true;
+        debouncedRender();
+    });
+    presenceRef.on('child_added', function(snap) {
+        if (!initialLoadDone) return;
+        onlineData[snap.key] = snap.val();
+        debouncedRender();
+    });
+    presenceRef.on('child_changed', function(snap) {
+        onlineData[snap.key] = snap.val();
+        if (initialLoadDone) debouncedRender();
+    });
+    presenceRef.on('child_removed', function(snap) {
+        delete onlineData[snap.key];
+        if (initialLoadDone) debouncedRender();
     });
 
     // استمع للرسائل

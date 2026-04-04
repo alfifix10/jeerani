@@ -185,6 +185,7 @@ function fmtFull(t) {
     return new Date(t).toLocaleDateString('ar', {day:'numeric', month:'short'}) + ' ' + fmt(t);
 }
 function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+function escAttr(t) { return esc(t).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 function banUser(uid, name) {
     if (!confirm('حظر ' + name + '؟')) return;
@@ -239,7 +240,7 @@ function initListeners() {
             list.forEach(([uid, u]) => {
                 h += '<div class="item"><div><span class="name">' + esc(u.name||uid.slice(0,14)) + '</span>';
                 h += '<div class="id">' + uid.slice(0,14) + '</div></div>';
-                h += '<button class="btn" style="font-size:10px;padding:3px 10px;color:var(--a);border-color:var(--a)" data-uid="' + uid + '" onclick="unbanUser(this.dataset.uid)">إلغاء ❎</button></div>';
+                h += '<button class="btn" style="font-size:10px;padding:3px 10px;color:var(--a);border-color:var(--a)" data-uid="' + escAttr(uid) + '" onclick="unbanUser(this.dataset.uid)">إلغاء ❎</button></div>';
             });
         }
         h += '</div>';
@@ -307,7 +308,7 @@ function renderUsers() {
             h += '<span class="' + dotCls + '"></span>';
             h += '<div class="id">' + id.slice(0,14) + ' · ' + statusText + '</div>';
             h += '</div>';
-            h += '<button class="btn" style="font-size:10px;padding:2px 6px;color:var(--r);border-color:var(--r)" data-uid="' + id + '" data-name="' + esc(u.name||'') + '" onclick="banUser(this.dataset.uid,this.dataset.name)">🚫</button></div>';
+            h += '<button class="btn" style="font-size:10px;padding:2px 6px;color:var(--r);border-color:var(--r)" data-uid="' + escAttr(id) + '" data-name="' + escAttr(u.name||'') + '" onclick="banUser(this.dataset.uid,this.dataset.name)">🚫</button></div>';
         });
     }
     h += '</div>';
@@ -333,7 +334,7 @@ function renderConvs() {
         filtered.forEach(([key, c]) => {
             const names = Object.values(c.users).filter(Boolean);
             const textCls = c.lastText && c.lastText.startsWith('📌') ? ' system-msg' : '';
-            ch += '<div class="card"><div class="item conv" data-conv="' + esc(key) + '">';
+            ch += '<div class="card"><div class="item conv" data-conv="' + escAttr(key) + '">';
             ch += '<div><div class="name">' + esc(names.join(' ↔ ')) + '</div>';
             ch += '<div class="preview' + textCls + '">' + esc(c.lastText||'') + '</div>';
             ch += '<div class="time">' + fmtFull(c.lastTime) + '</div></div>';
@@ -351,7 +352,7 @@ function openConv(key) {
     document.getElementById('p-chat').classList.add('active');
 
     const names = Object.values(c.users).filter(Boolean);
-    const msgs = c.msgs.sort((a, b) => (a.t||0) - (b.t||0));
+    const msgs = [...c.msgs].sort((a, b) => (a.t||0) - (b.t||0));
     const first = msgs[0] ? msgs[0].from : '';
 
     // حساب highlights لو فيه بحث
