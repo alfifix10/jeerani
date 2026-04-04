@@ -801,7 +801,7 @@ function renderPeopleFromData(data) {
     let allUsers = [];
     Object.entries(data).forEach(function(entry) {
         let id = entry[0], u = entry[1];
-        if (id !== myId && !myOldIds.has(id) && !blockedUsers.has(id) && u.name && (window._skipGpsFilter || (u.lat && u.lng))) {
+        if (id !== myId && !myOldIds.has(id) && !blockedUsers.has(id) && u.name) {
             u.id = id;
             if (myLat && u.lat && u.lng) {
                 u._dist = getDistance(u.lat, u.lng);
