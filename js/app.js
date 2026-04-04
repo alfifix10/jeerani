@@ -503,6 +503,9 @@ function enterPeopleScreen() {
     // تحديث الموقع بالخلفية
     startGpsPoll();
 
+    // تفعيل إشعارات Push
+    initPushNotifications();
+
     // لو GPS ما جهز بعد 15 ثانية → نعرض الكل بدون فلتر GPS
     setTimeout(function() {
         if (!myLat && presenceRef) {
@@ -1181,3 +1184,34 @@ window.addEventListener('storage', function(e) {
     }
 });
 localStorage.setItem('jeerani_active_tab', Date.now());
+
+// ========== PUSH NOTIFICATIONS ==========
+/** تفعيل إشعارات Push — تعمل حتى لو المتصفح مغلق */
+function initPushNotifications() {
+    if (!('serviceWorker' in navigator) || !firebase.messaging) return;
+
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(function(registration) {
+            const messaging = firebase.messaging();
+
+            // طلب إذن الإشعارات
+            Notification.requestPermission().then(function(permission) {
+                if (permission === 'granted') {
+                    // الحصول على توكن الإشعارات
+                    messaging.getToken({ 
+                        serviceWorkerRegistration: registration 
+                    }).then(function(token) {
+                        if (token && myPresenceRef) {
+                            // حفظ التوكن في Firebase عشان نقدر نرسل إشعارات
+                            myPresenceRef.update({ pushToken: token });
+                        }
+                    }).catch(function() {});
+
+                    // إشعارات وأنت داخل الموقع
+                    messaging.onMessage(function(payload) {
+                        // لو الموقع مفتوح — الصوت يكفي (ما نحتاج إشعار)
+                    });
+                }
+            });
+        }).catch(function() {});
+}
