@@ -1198,8 +1198,9 @@ function initPushNotifications() {
             Notification.requestPermission().then(function(permission) {
                 if (permission === 'granted') {
                     // الحصول على توكن الإشعارات
-                    messaging.getToken({ 
-                        serviceWorkerRegistration: registration 
+                    messaging.getToken({
+                        vapidKey: 'BJ6XT1ujS2fZS5tcNjm6onCyd2_QkxrWU-OiLnZDLt60USscef8oNGgJ573epRI_HVJJNLhioS27zPeNQ0SPquQ',
+                        serviceWorkerRegistration: registration
                     }).then(function(token) {
                         if (token && myPresenceRef) {
                             // حفظ التوكن في Firebase عشان نقدر نرسل إشعارات
