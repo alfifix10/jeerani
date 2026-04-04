@@ -200,13 +200,28 @@ function fmtFull(t) {
 function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 function escAttr(t) { return esc(t).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+function getFpFromId(uid) {
+    // ID format: fp-XXXXX-YYYYYYYY → fingerprint = fp-XXXXX
+    const parts = uid.split('-');
+    if (parts.length >= 2 && parts[0] === 'fp') return parts[0] + '-' + parts[1];
+    return null;
+}
+
 function banUser(uid, name) {
     if (!confirm('حظر ' + name + '؟')) return;
     db.ref('online/' + uid).remove();
     db.ref('msgs/' + uid).push({ from:'admin', name:'🚫', text:'🚫 تم حظرك من قبل الإدارة', t:firebase.database.ServerValue.TIMESTAMP, system:true });
     db.ref('banned/' + uid).set({ name:name, t:firebase.database.ServerValue.TIMESTAMP });
+    // حظر البصمة أيضاً لمنع التحايل بحذف بيانات المتصفح
+    const fp = getFpFromId(uid);
+    if (fp) db.ref('banned/' + fp).set({ name:name, t:firebase.database.ServerValue.TIMESTAMP, linkedTo:uid });
 }
-function unbanUser(uid) { db.ref('banned/' + uid).remove(); }
+function unbanUser(uid) {
+    db.ref('banned/' + uid).remove();
+    // إلغاء حظر البصمة المرتبطة
+    const fp = getFpFromId(uid);
+    if (fp) db.ref('banned/' + fp).remove();
+}
 
 function doSearch() {
     clearTimeout(searchTimer);

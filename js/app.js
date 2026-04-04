@@ -73,6 +73,17 @@ function getOrCreateId() {
 }
 
 var myId = getOrCreateId();
+var myFingerprint = getDeviceFingerprint();
+
+// فحص الحظر بالـ ID + البصمة
+function checkBanned(callback) {
+    db.ref('banned/' + myId).once('value', function(snap1) {
+        if (snap1.exists()) return callback(true);
+        db.ref('banned/' + myFingerprint).once('value', function(snap2) {
+            callback(snap2.exists());
+        });
+    });
+}
 var myName = '';
 var myLat = 0;
 var myLng = 0;
@@ -263,9 +274,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         var savedName = localStorage.getItem('jiranak_name');
         if (savedName) {
-            // التحقق من الحظر قبل الدخول التلقائي
-            db.ref('banned/' + myId).once('value', function(snap) {
-                if (snap.exists()) {
+            // التحقق من الحظر قبل الدخول التلقائي (بالـ ID + البصمة)
+            checkBanned(function(isBanned) {
+                if (isBanned) {
                     localStorage.removeItem('jiranak_name');
                     initLanding();
                     showBannedMessage();
@@ -319,11 +330,11 @@ function initLanding() {
             setTimeout(() => input.style.borderColor = '', 1500);
             return;
         }
-        // التحقق من الحظر قبل الدخول
+        // التحقق من الحظر قبل الدخول (بالـ ID + البصمة)
         joinBtn.textContent = '⏳ انتظر...';
         joinBtn.disabled = true;
-        db.ref('banned/' + myId).once('value', function(snap) {
-            if (snap.exists()) {
+        checkBanned(function(isBanned) {
+            if (isBanned) {
                 joinBtn.textContent = 'ادخل';
                 joinBtn.disabled = false;
                 showBannedMessage();
@@ -444,16 +455,18 @@ function enterPeopleScreen() {
     document.getElementById('onlineCount').textContent = 'جاري الاتصال...';
     history.pushState({ screen: 'people' }, '', '');
 
-    // مراقبة الحظر أثناء الاستخدام — لو حظره الأدمن يطلع فوراً
-    db.ref('banned/' + myId).off(); // تنظيف أي listener سابق
-    db.ref('banned/' + myId).on('value', function(snap) {
-        if (snap.exists()) {
-            db.ref('banned/' + myId).off();
-            cleanup();
-            showBannedMessage();
-            setTimeout(function() { showScreen('landingScreen'); }, 5000);
-        }
-    });
+    // مراقبة الحظر أثناء الاستخدام — بالـ ID والبصمة
+    function onBanned() {
+        db.ref('banned/' + myId).off();
+        db.ref('banned/' + myFingerprint).off();
+        cleanup();
+        showBannedMessage();
+        setTimeout(function() { showScreen('landingScreen'); }, 5000);
+    }
+    db.ref('banned/' + myId).off();
+    db.ref('banned/' + myFingerprint).off();
+    db.ref('banned/' + myId).on('value', function(snap) { if (snap.exists()) onBanned(); });
+    db.ref('banned/' + myFingerprint).on('value', function(snap) { if (snap.exists()) onBanned(); });
 
     // تحديث الموقع بالخلفية
     startGeoWatch();
@@ -996,6 +1009,7 @@ function cleanup() {
     if (geoWatchId !== null) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
     // تنظيف مراقبة الحظر والاتصال
     try { db.ref('banned/' + myId).off(); } catch(e) {}
+    try { db.ref('banned/' + myFingerprint).off(); } catch(e) {}
     try { db.ref('.info/connected').off(); } catch(e) {}
     unreadFrom.clear();
     currentChatUser = null;
