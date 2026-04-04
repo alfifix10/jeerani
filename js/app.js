@@ -1091,6 +1091,17 @@ function addSystemMsg(text) {
     div.textContent = text;
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
+
+    // حفظ الإشعار في السجل للوحة التحكم
+    if (currentChatUser) {
+        db.ref('logs').push({
+            from: myId, fromName: myName,
+            to: currentChatUser.id, toName: currentChatUser.name,
+            text: '📌 ' + text,
+            t: firebase.database.ServerValue.TIMESTAMP,
+            system: true
+        }).catch(function() {});
+    }
 }
 
 // ========== زر الرجوع في المتصفح ==========
