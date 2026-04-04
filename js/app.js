@@ -622,6 +622,7 @@ function enterPeopleScreen() {
         if (!window._logsCleanedUp) {
             window._logsCleanedUp = true;
             db.ref('logs').once('value', function(s) {
+                const now = Date.now();
                 let logData = s.val() || {};
                 let convs = {};
                 Object.entries(logData).forEach(function(e) {
